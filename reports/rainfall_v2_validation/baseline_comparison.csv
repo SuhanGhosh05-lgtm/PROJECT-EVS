@@ -1,0 +1,4 @@
+model,accuracy,precision,recall,f1
+HistGradientBoosting V2,0.8941,0.7809,0.804,0.7923
+Current-hour persistence,0.863,0.9349,0.4885,0.6417
+Always predict no rain,0.7488,0.0,0.0,0.0

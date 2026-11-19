@@ -1,0 +1,10 @@
+station_id,station_name,parameter_name,total_readings,zero_readings,zero_percentage
+site_1399,"Anand Kala Kshetram, Rajamahendravaram - APPCB",CO,710,1,0.14084507042253522
+site_1408,"Talcher Coalfields,Talcher - OSPCB",CO,718,5,0.6963788300835655
+site_1437,"Model Town, Patiala - PPCB",CO,719,1,0.13908205841446453
+site_252,"Plammoodu, Thiruvananthapuram - Kerala PCB",CO,716,2,0.27932960893854747
+site_277,"Lalbagh, Lucknow - CPCB",CO,704,9,1.278409090909091
+site_304,"Gangapur Road, Nashik - MPCB",CO,712,1,0.1404494382022472
+site_5060,"Nathu Colony, Ballabgarh - HSPCB",CO,698,3,0.42979942693409745
+site_5587,"Bardowali, Agartala - Tripura SPCB",CO,720,299,41.52777777777778
+site_5710,"Sardar Patel Nagar, Dhanbad - JSPCB",CO,500,49,9.8

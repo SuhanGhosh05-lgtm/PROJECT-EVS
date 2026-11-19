@@ -1,0 +1,30 @@
+station_id,station_name,city_name,state_name,record_count
+site_5710,"Sardar Patel Nagar, Dhanbad - JSPCB",Dhanbad,Jharkhand,156
+site_5131,"Lumpyngngad, Shillong - Meghalaya PCB",Shillong,Meghalaya,991
+site_308,"Maninagar, Ahmedabad - GPCB",Ahmedabad,Gujarat,1000
+site_5060,"Nathu Colony, Ballabgarh - HSPCB",Ballabgarh,Haryana,1017
+site_252,"Plammoodu, Thiruvananthapuram - Kerala PCB",Thiruvananthapuram,Kerala,1054
+site_5446,"Naharlagun, Naharlagun - APSPCB",Naharlagun,Arunachal Pradesh,1084
+site_5346,"Sikulpuikawn, Aizawl - Mizoram PCB",Aizawl,Mizoram,1111
+site_5590,"Zero Point GICI, Gangtok - SSPCB",Gangtok,Sikkim,1128
+site_1399,"Anand Kala Kshetram, Rajamahendravaram - APPCB",Rajamahendravaram,Andhra Pradesh,1130
+site_293,Alandur Bus Depot Chennai,,,1136
+site_5127,"Sector-25, Chandigarh - CPCC",Chandigarh,Chandigarh,1143
+site_277,"Lalbagh, Lucknow - CPCB",Lucknow,Uttar Pradesh,1152
+site_1396,"Shastri Nagar, Jaipur - RSPCB",Jaipur,Rajasthan,1162
+site_298,"Zoo Park, Hyderabad - TSPCB",Hyderabad,Telangana,1164
+site_113,"Shadipur, Delhi - CPCB",Delhi,Delhi,1166
+site_309,"Victoria, Kolkata - WBPCB",Kolkata,West Bengal,1167
+site_304,"Gangapur Road, Nashik - MPCB",Nashik,Maharashtra,1169
+site_1402,"Sector-2 Industrial Area, Pithampur - MPPCB",Pithampur,Madhya Pradesh,1170
+site_5703,"Shivaji Nagar, Rishikesh - UKPCB",Rishikesh,Uttarakhand,1170
+site_5423,"Jawahar Nagar, Puducherry - PPCC",Puducherry,Puducherry,1171
+site_5660,"32Bungalows, Bhilai - CECB",Bhilai,Chhattisgarh,1172
+site_1437,"Model Town, Patiala - PPCB",Patiala,Punjab,1172
+site_5262,"Rajbansi Nagar, Patna - BSPCB",Patna,Bihar,1173
+site_162,"BTM Layout, Bengaluru - CPCB",Bengaluru,Karnataka,1174
+site_288,"Velachery Res. Area, Chennai - CPCB",Chennai,TamilNadu,1176
+site_1408,"Talcher Coalfields,Talcher - OSPCB",Talcher,Odisha,1176
+site_5586,"HIMUDA Complex Phase-1, Baddi - HPPCB",Baddi,Himachal Pradesh,1176
+site_5073,"Railway Colony, Guwahati - PCBA",Guwahati,Assam,1176
+site_5587,"Bardowali, Agartala - Tripura SPCB",Agartala,Tripura,1176

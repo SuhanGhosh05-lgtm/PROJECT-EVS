@@ -1,0 +1,29 @@
+[
+  {
+    "observed_at_utc": "2026-11-16T11:11:30.118644+00:00",
+    "measurement_time": "2026-11-16 13:00:00",
+    "aqi": 157.0,
+    "station_name": "Fort William, Kolkata, India",
+    "location": "Kolkata",
+    "latitude": 22.55664,
+    "longitude": 88.342674
+  },
+  {
+    "observed_at_utc": "2026-11-16T11:12:24.918215+00:00",
+    "measurement_time": "2026-11-16 16:00:00",
+    "aqi": 174.0,
+    "station_name": "Mandir Marg, Delhi, Delhi, India",
+    "location": "Delhi",
+    "latitude": 28.6341,
+    "longitude": 77.2005
+  },
+  {
+    "observed_at_utc": "2026-11-19T03:40:24.944595+00:00",
+    "measurement_time": "2026-11-19 05:00:00",
+    "aqi": 141.0,
+    "station_name": "Fort William, Kolkata, India",
+    "location": "Kolkata",
+    "latitude": 22.55664,
+    "longitude": 88.342674
+  }
+]

@@ -1,0 +1,30 @@
+station_id,PM2.5,PM10,NO2,SO2,CO,Ozone,NH3,PM2.5_coverage,PM10_coverage,training_eligible,station_name,state_name,city_name,source,latitude,longitude
+site_113,166,165,168,166,167,168,166,0.9880952380952381,0.9821428571428571,True,"Shadipur, Delhi - CPCB",Delhi,Delhi,cpcb_caaqm,28.6514781,77.1473105
+site_1396,164,164,168,162,168,168,168,0.9761904761904762,0.9761904761904762,True,"Shastri Nagar, Jaipur - RSPCB",Rajasthan,Jaipur,cpcb_caaqm,26.9502929,75.730943
+site_1399,166,166,165,141,161,166,165,0.9880952380952381,0.9880952380952381,True,"Anand Kala Kshetram, Rajamahendravaram - APPCB",Andhra Pradesh,Rajamahendravaram,cpcb_caaqm,16.9872867,81.7363176
+site_1402,165,165,168,168,168,168,168,0.9821428571428571,0.9821428571428571,True,"Sector-2 Industrial Area, Pithampur - MPPCB",Madhya Pradesh,Pithampur,cpcb_caaqm,22.624758,75.675238
+site_1408,168,168,168,168,168,168,168,1.0,1.0,True,"Talcher Coalfields,Talcher - OSPCB",Odisha,Talcher,cpcb_caaqm,20.9360711,85.1707021
+site_1437,167,167,167,168,168,168,167,0.9940476190476191,0.9940476190476191,True,"Model Town, Patiala - PPCB",Punjab,Patiala,cpcb_caaqm,30.349388,76.366642
+site_162,167,167,168,168,168,168,168,0.9940476190476191,0.9940476190476191,True,"BTM Layout, Bengaluru - CPCB",Karnataka,Bengaluru,cpcb_caaqm,12.9135218,77.5950804
+site_252,111,136,164,159,164,159,161,0.6607142857142857,0.8095238095238095,False,"Plammoodu, Thiruvananthapuram - Kerala PCB",Kerala,Thiruvananthapuram,cpcb_caaqm,8.5149093,76.9435879
+site_277,157,165,167,166,167,167,163,0.9345238095238095,0.9821428571428571,True,"Lalbagh, Lucknow - CPCB",Uttar Pradesh,Lucknow,cpcb_caaqm,26.8458805,80.9365541
+site_288,168,168,168,168,168,168,168,1.0,1.0,True,"Velachery Res. Area, Chennai - CPCB",TamilNadu,Chennai,cpcb_caaqm,13.0052189,80.2398125
+site_293,168,168,149,168,168,168,147,1.0,1.0,True,Alandur Bus Depot Chennai,,,cpcb_caaqm,,
+site_298,160,166,168,166,168,168,168,0.9523809523809523,0.9880952380952381,True,"Zoo Park, Hyderabad - TSPCB",Telangana,Hyderabad,cpcb_caaqm,17.349694,78.451437
+site_304,166,168,168,168,163,168,168,0.9880952380952381,1.0,True,"Gangapur Road, Nashik - MPCB",Maharashtra,Nashik,cpcb_caaqm,20.0073285,73.7762427
+site_308,164,164,168,168,168,168,0,0.9761904761904762,0.9761904761904762,True,"Maninagar, Ahmedabad - GPCB",Gujarat,Ahmedabad,cpcb_caaqm,23.002657,72.591912
+site_309,167,167,166,167,168,166,166,0.9940476190476191,0.9940476190476191,True,"Victoria, Kolkata - WBPCB",West Bengal,Kolkata,cpcb_caaqm,22.5448082,88.3403691
+site_5060,145,145,145,145,147,145,145,0.8630952380952381,0.8630952380952381,True,"Nathu Colony, Ballabgarh - HSPCB",Haryana,Ballabgarh,cpcb_caaqm,28.3419248,77.319699
+site_5073,168,168,168,168,168,168,168,1.0,1.0,True,"Railway Colony, Guwahati - PCBA",Assam,Guwahati,cpcb_caaqm,26.181742,91.78063
+site_5127,164,162,166,155,166,164,166,0.9761904761904762,0.9642857142857143,True,"Sector-25, Chandigarh - CPCC",Chandigarh,Chandigarh,cpcb_caaqm,30.751462,76.762879
+site_5131,93,88,162,162,162,162,162,0.5535714285714286,0.5238095238095238,False,"Lumpyngngad, Shillong - Meghalaya PCB",Meghalaya,Shillong,cpcb_caaqm,25.5586,91.8985
+site_5262,168,168,168,168,168,168,165,1.0,1.0,True,"Rajbansi Nagar, Patna - BSPCB",Bihar,Patna,cpcb_caaqm,25.599486,85.113666
+site_5346,140,165,163,167,167,142,167,0.8333333333333334,0.9821428571428571,True,"Sikulpuikawn, Aizawl - Mizoram PCB",Mizoram,Aizawl,cpcb_caaqm,23.7176342,92.7192841
+site_5423,164,168,168,168,167,168,168,0.9761904761904762,1.0,True,"Jawahar Nagar, Puducherry - PPCC",Puducherry,Puducherry,cpcb_caaqm,11.9309,79.8027
+site_5446,155,154,155,155,155,155,155,0.9226190476190477,0.9166666666666666,True,"Naharlagun, Naharlagun - APSPCB",Arunachal Pradesh,Naharlagun,cpcb_caaqm,27.103358,93.679645
+site_5586,168,168,168,168,168,168,168,1.0,1.0,True,"HIMUDA Complex Phase-1, Baddi - HPPCB",Himachal Pradesh,Baddi,cpcb_caaqm,30.943887,76.801991
+site_5587,168,168,168,168,168,168,168,1.0,1.0,True,"Bardowali, Agartala - Tripura SPCB",Tripura,Agartala,cpcb_caaqm,23.8175497,91.2726974
+site_5590,164,164,128,168,168,168,168,0.9761904761904762,0.9761904761904762,True,"Zero Point GICI, Gangtok - SSPCB",Sikkim,Gangtok,cpcb_caaqm,27.33853,88.614099
+site_5660,165,167,168,168,168,168,168,0.9821428571428571,0.9940476190476191,True,"32Bungalows, Bhilai - CECB",Chhattisgarh,Bhilai,cpcb_caaqm,21.194815,81.31477
+site_5703,165,165,168,168,168,168,168,0.9821428571428571,0.9821428571428571,True,"Shivaji Nagar, Rishikesh - UKPCB",Uttarakhand,Rishikesh,cpcb_caaqm,30.075911,78.2859547
+site_5710,7,4,41,40,43,21,0,0.041666666666666664,0.023809523809523808,False,"Sardar Patel Nagar, Dhanbad - JSPCB",Jharkhand,Dhanbad,cpcb_caaqm,23.80569,86.44268

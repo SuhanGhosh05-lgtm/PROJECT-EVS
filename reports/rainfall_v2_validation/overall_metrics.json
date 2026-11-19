@@ -1,0 +1,13 @@
+{
+    "records": 115712,
+    "accuracy": 0.8940991426991151,
+    "precision": 0.780900190463461,
+    "recall": 0.8040045412323253,
+    "f1": 0.7922839610807879,
+    "roc_auc": 0.953944004352589,
+    "pr_auc": 0.8927004308089043,
+    "true_negatives": 80088,
+    "false_positives": 6557,
+    "false_negatives": 5697,
+    "true_positives": 23370
+}

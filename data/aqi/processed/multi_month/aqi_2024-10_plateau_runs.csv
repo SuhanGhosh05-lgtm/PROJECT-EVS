@@ -1,0 +1,162 @@
+station_id,parameter_name,run_id,station_name,value,readings,start,end,duration_hours
+site_1399,CO,81,"Anand Kala Kshetram, Rajamahendravaram - APPCB",0.11,18,2024-10-04 16:00:00,2024-10-05 09:00:00,18.0
+site_162,SO2,511,"BTM Layout, Bengaluru - CPCB",4.0,24,2024-10-22 18:00:00,2024-10-23 17:00:00,24.0
+site_162,SO2,512,"BTM Layout, Bengaluru - CPCB",4.0,7,2024-10-23 19:00:00,2024-10-24 01:00:00,7.0
+site_162,SO2,513,"BTM Layout, Bengaluru - CPCB",4.0,7,2024-10-24 03:00:00,2024-10-24 09:00:00,7.0
+site_288,CO,1,"Velachery Res. Area, Chennai - CPCB",0.5,18,2024-10-01 00:00:00,2024-10-01 17:00:00,18.0
+site_288,CO,5,"Velachery Res. Area, Chennai - CPCB",0.0,13,2024-10-01 21:00:00,2024-10-02 09:00:00,13.0
+site_288,CO,14,"Velachery Res. Area, Chennai - CPCB",0.0,15,2024-10-02 18:00:00,2024-10-03 08:00:00,15.0
+site_288,CO,25,"Velachery Res. Area, Chennai - CPCB",0.0,14,2024-10-03 19:00:00,2024-10-04 08:00:00,14.0
+site_288,CO,38,"Velachery Res. Area, Chennai - CPCB",0.0,12,2024-10-04 21:00:00,2024-10-05 08:00:00,12.0
+site_288,CO,48,"Velachery Res. Area, Chennai - CPCB",0.0,14,2024-10-05 19:00:00,2024-10-06 08:00:00,14.0
+site_288,CO,57,"Velachery Res. Area, Chennai - CPCB",0.0,12,2024-10-06 21:00:00,2024-10-07 08:00:00,12.0
+site_288,CO,69,"Velachery Res. Area, Chennai - CPCB",0.3,158,2024-10-07 21:00:00,2024-10-14 10:00:00,158.0
+site_288,CO,164,"Velachery Res. Area, Chennai - CPCB",0.0,10,2024-10-19 00:00:00,2024-10-19 09:00:00,10.0
+site_288,CO,174,"Velachery Res. Area, Chennai - CPCB",0.0,14,2024-10-19 19:00:00,2024-10-20 08:00:00,14.0
+site_288,CO,182,"Velachery Res. Area, Chennai - CPCB",0.0,17,2024-10-20 16:00:00,2024-10-21 08:00:00,17.0
+site_288,CO,192,"Velachery Res. Area, Chennai - CPCB",0.0,14,2024-10-21 20:00:00,2024-10-22 09:00:00,14.0
+site_288,CO,219,"Velachery Res. Area, Chennai - CPCB",0.4,18,2024-10-23 18:00:00,2024-10-24 11:00:00,18.0
+site_288,CO,225,"Velachery Res. Area, Chennai - CPCB",0.4,17,2024-10-24 17:00:00,2024-10-25 09:00:00,17.0
+site_288,CO,269,"Velachery Res. Area, Chennai - CPCB",0.4,17,2024-10-27 14:00:00,2024-10-28 06:00:00,17.0
+site_288,NH3,3,"Velachery Res. Area, Chennai - CPCB",3.5,7,2024-10-01 02:00:00,2024-10-01 08:00:00,7.0
+site_288,NH3,177,"Velachery Res. Area, Chennai - CPCB",3.5,10,2024-10-09 00:00:00,2024-10-09 09:00:00,10.0
+site_288,NH3,190,"Velachery Res. Area, Chennai - CPCB",3.5,13,2024-10-09 22:00:00,2024-10-10 10:00:00,13.0
+site_288,NH3,199,"Velachery Res. Area, Chennai - CPCB",3.5,15,2024-10-10 19:00:00,2024-10-11 09:00:00,15.0
+site_288,NH3,209,"Velachery Res. Area, Chennai - CPCB",3.5,14,2024-10-11 19:00:00,2024-10-12 08:00:00,14.0
+site_288,NH3,220,"Velachery Res. Area, Chennai - CPCB",3.5,14,2024-10-12 19:00:00,2024-10-13 08:00:00,14.0
+site_288,NH3,227,"Velachery Res. Area, Chennai - CPCB",3.5,9,2024-10-13 15:00:00,2024-10-13 23:00:00,9.0
+site_288,NH3,361,"Velachery Res. Area, Chennai - CPCB",3.5,10,2024-10-19 23:00:00,2024-10-20 08:00:00,10.0
+site_288,NH3,374,"Velachery Res. Area, Chennai - CPCB",3.5,12,2024-10-20 21:00:00,2024-10-21 08:00:00,12.0
+site_288,NH3,390,"Velachery Res. Area, Chennai - CPCB",3.5,10,2024-10-22 00:00:00,2024-10-22 09:00:00,10.0
+site_293,SO2,80,Alandur Bus Depot Chennai,4.2,23,2024-10-10 08:00:00,2024-10-11 06:00:00,23.0
+site_293,SO2,143,Alandur Bus Depot Chennai,4.2,21,2024-10-15 00:00:00,2024-10-15 20:00:00,21.0
+site_293,SO2,148,Alandur Bus Depot Chennai,4.2,174,2024-10-16 01:00:00,2024-10-23 06:00:00,174.0
+site_298,PM10,683,"Zoo Park, Hyderabad - TSPCB",102.0,17,2024-10-29 18:00:00,2024-10-30 10:00:00,17.0
+site_5060,CO,227,"Nathu Colony, Ballabgarh - HSPCB",0.0,6,2024-10-10 18:00:00,2024-10-10 23:00:00,6.0
+site_5060,CO,261,"Nathu Colony, Ballabgarh - HSPCB",0.0,6,2024-10-12 10:00:00,2024-10-12 15:00:00,6.0
+site_5060,CO,671,"Nathu Colony, Ballabgarh - HSPCB",0.2,8,2024-10-31 10:00:00,2024-10-31 17:00:00,8.0
+site_5131,CO,182,"Lumpyngngad, Shillong - Meghalaya PCB",0.14,6,2024-10-10 00:00:00,2024-10-10 05:00:00,6.0
+site_5131,CO,510,"Lumpyngngad, Shillong - Meghalaya PCB",0.15,7,2024-10-31 00:00:00,2024-10-31 06:00:00,7.0
+site_5346,CO,446,"Sikulpuikawn, Aizawl - Mizoram PCB",0.04,7,2024-10-26 13:00:00,2024-10-26 19:00:00,7.0
+site_5346,CO,450,"Sikulpuikawn, Aizawl - Mizoram PCB",0.04,8,2024-10-27 02:00:00,2024-10-27 09:00:00,8.0
+site_5346,CO,452,"Sikulpuikawn, Aizawl - Mizoram PCB",0.04,18,2024-10-27 15:00:00,2024-10-28 08:00:00,18.0
+site_5346,CO,460,"Sikulpuikawn, Aizawl - Mizoram PCB",0.04,7,2024-10-29 03:00:00,2024-10-29 09:00:00,7.0
+site_5346,CO,463,"Sikulpuikawn, Aizawl - Mizoram PCB",0.06,11,2024-10-29 15:00:00,2024-10-30 01:00:00,11.0
+site_5346,CO,470,"Sikulpuikawn, Aizawl - Mizoram PCB",0.06,11,2024-10-30 17:00:00,2024-10-31 03:00:00,11.0
+site_5346,SO2,34,"Sikulpuikawn, Aizawl - Mizoram PCB",2.57,11,2024-10-02 11:00:00,2024-10-02 21:00:00,11.0
+site_5346,SO2,68,"Sikulpuikawn, Aizawl - Mizoram PCB",2.57,9,2024-10-04 12:00:00,2024-10-04 20:00:00,9.0
+site_5346,SO2,85,"Sikulpuikawn, Aizawl - Mizoram PCB",2.57,7,2024-10-05 14:00:00,2024-10-05 20:00:00,7.0
+site_5346,SO2,280,"Sikulpuikawn, Aizawl - Mizoram PCB",2.57,6,2024-10-15 14:00:00,2024-10-15 19:00:00,6.0
+site_5346,SO2,295,"Sikulpuikawn, Aizawl - Mizoram PCB",2.57,9,2024-10-16 12:00:00,2024-10-16 20:00:00,9.0
+site_5346,SO2,305,"Sikulpuikawn, Aizawl - Mizoram PCB",2.57,14,2024-10-17 07:00:00,2024-10-17 20:00:00,14.0
+site_5346,SO2,361,"Sikulpuikawn, Aizawl - Mizoram PCB",2.57,10,2024-10-20 12:00:00,2024-10-20 21:00:00,10.0
+site_5346,SO2,377,"Sikulpuikawn, Aizawl - Mizoram PCB",2.57,6,2024-10-21 17:00:00,2024-10-21 22:00:00,6.0
+site_5346,SO2,480,"Sikulpuikawn, Aizawl - Mizoram PCB",2.57,8,2024-10-27 11:00:00,2024-10-27 18:00:00,8.0
+site_5446,NH3,8,"Naharlagun, Naharlagun - APSPCB",0.99,17,2024-10-01 16:00:00,2024-10-02 08:00:00,17.0
+site_5446,NH3,11,"Naharlagun, Naharlagun - APSPCB",0.99,9,2024-10-03 12:00:00,2024-10-03 20:00:00,9.0
+site_5446,NH3,28,"Naharlagun, Naharlagun - APSPCB",0.99,17,2024-10-07 18:00:00,2024-10-08 10:00:00,17.0
+site_5446,NH3,33,"Naharlagun, Naharlagun - APSPCB",1.0,8,2024-10-08 15:00:00,2024-10-08 22:00:00,8.0
+site_5446,NH3,40,"Naharlagun, Naharlagun - APSPCB",0.99,15,2024-10-09 20:00:00,2024-10-10 10:00:00,15.0
+site_5446,NH3,135,"Naharlagun, Naharlagun - APSPCB",1.05,7,2024-10-17 00:00:00,2024-10-17 06:00:00,7.0
+site_5446,NH3,157,"Naharlagun, Naharlagun - APSPCB",1.06,8,2024-10-22 20:00:00,2024-10-23 03:00:00,8.0
+site_5446,NH3,163,"Naharlagun, Naharlagun - APSPCB",1.06,23,2024-10-23 11:00:00,2024-10-24 09:00:00,23.0
+site_5446,NH3,165,"Naharlagun, Naharlagun - APSPCB",1.06,45,2024-10-24 11:00:00,2024-10-26 07:00:00,45.0
+site_5446,NH3,168,"Naharlagun, Naharlagun - APSPCB",1.06,6,2024-10-26 13:00:00,2024-10-26 18:00:00,6.0
+site_5446,NH3,170,"Naharlagun, Naharlagun - APSPCB",1.06,64,2024-10-26 20:00:00,2024-10-29 11:00:00,64.0
+site_5446,NH3,172,"Naharlagun, Naharlagun - APSPCB",1.06,53,2024-10-29 13:00:00,2024-10-31 17:00:00,53.0
+site_5446,NO2,9,"Naharlagun, Naharlagun - APSPCB",2.67,14,2024-10-01 16:00:00,2024-10-02 05:00:00,14.0
+site_5446,NO2,39,"Naharlagun, Naharlagun - APSPCB",2.67,17,2024-10-07 18:00:00,2024-10-08 10:00:00,17.0
+site_5446,NO2,58,"Naharlagun, Naharlagun - APSPCB",2.67,13,2024-10-09 22:00:00,2024-10-10 10:00:00,13.0
+site_5446,NO2,214,"Naharlagun, Naharlagun - APSPCB",2.88,6,2024-10-22 20:00:00,2024-10-23 01:00:00,6.0
+site_5446,NO2,223,"Naharlagun, Naharlagun - APSPCB",2.88,22,2024-10-23 11:00:00,2024-10-24 08:00:00,22.0
+site_5446,NO2,226,"Naharlagun, Naharlagun - APSPCB",2.88,6,2024-10-24 11:00:00,2024-10-24 16:00:00,6.0
+site_5446,NO2,230,"Naharlagun, Naharlagun - APSPCB",2.88,7,2024-10-25 00:00:00,2024-10-25 06:00:00,7.0
+site_5446,NO2,237,"Naharlagun, Naharlagun - APSPCB",2.88,16,2024-10-25 16:00:00,2024-10-26 07:00:00,16.0
+site_5446,NO2,244,"Naharlagun, Naharlagun - APSPCB",2.88,12,2024-10-26 20:00:00,2024-10-27 07:00:00,12.0
+site_5446,NO2,246,"Naharlagun, Naharlagun - APSPCB",2.88,18,2024-10-27 09:00:00,2024-10-28 02:00:00,18.0
+site_5446,NO2,248,"Naharlagun, Naharlagun - APSPCB",2.88,7,2024-10-28 04:00:00,2024-10-28 10:00:00,7.0
+site_5446,NO2,250,"Naharlagun, Naharlagun - APSPCB",2.88,23,2024-10-28 12:00:00,2024-10-29 10:00:00,23.0
+site_5446,NO2,251,"Naharlagun, Naharlagun - APSPCB",2.88,18,2024-10-29 12:00:00,2024-10-30 05:00:00,18.0
+site_5446,NO2,253,"Naharlagun, Naharlagun - APSPCB",2.88,11,2024-10-30 07:00:00,2024-10-30 17:00:00,11.0
+site_5446,NO2,264,"Naharlagun, Naharlagun - APSPCB",2.88,7,2024-10-31 10:00:00,2024-10-31 16:00:00,7.0
+site_5446,Ozone,11,"Naharlagun, Naharlagun - APSPCB",2.79,10,2024-10-01 23:00:00,2024-10-02 08:00:00,10.0
+site_5446,Ozone,15,"Naharlagun, Naharlagun - APSPCB",2.79,8,2024-10-03 13:00:00,2024-10-03 20:00:00,8.0
+site_5446,Ozone,40,"Naharlagun, Naharlagun - APSPCB",2.79,17,2024-10-07 18:00:00,2024-10-08 10:00:00,17.0
+site_5446,Ozone,57,"Naharlagun, Naharlagun - APSPCB",2.79,8,2024-10-09 22:00:00,2024-10-10 05:00:00,8.0
+site_5446,Ozone,239,"Naharlagun, Naharlagun - APSPCB",3.0,22,2024-10-23 11:00:00,2024-10-24 08:00:00,22.0
+site_5446,Ozone,242,"Naharlagun, Naharlagun - APSPCB",3.0,12,2024-10-24 11:00:00,2024-10-24 22:00:00,12.0
+site_5446,Ozone,250,"Naharlagun, Naharlagun - APSPCB",3.0,21,2024-10-25 11:00:00,2024-10-26 07:00:00,21.0
+site_5446,Ozone,256,"Naharlagun, Naharlagun - APSPCB",3.0,10,2024-10-26 20:00:00,2024-10-27 05:00:00,10.0
+site_5446,Ozone,258,"Naharlagun, Naharlagun - APSPCB",3.0,20,2024-10-27 07:00:00,2024-10-28 02:00:00,20.0
+site_5446,Ozone,260,"Naharlagun, Naharlagun - APSPCB",3.0,7,2024-10-28 04:00:00,2024-10-28 10:00:00,7.0
+site_5446,Ozone,262,"Naharlagun, Naharlagun - APSPCB",3.0,24,2024-10-28 12:00:00,2024-10-29 11:00:00,24.0
+site_5446,Ozone,264,"Naharlagun, Naharlagun - APSPCB",3.0,29,2024-10-29 13:00:00,2024-10-30 17:00:00,29.0
+site_5446,Ozone,274,"Naharlagun, Naharlagun - APSPCB",3.0,9,2024-10-31 09:00:00,2024-10-31 17:00:00,9.0
+site_5446,PM2.5,424,"Naharlagun, Naharlagun - APSPCB",1.16,42,2024-10-26 17:00:00,2024-10-28 10:00:00,42.0
+site_5446,SO2,15,"Naharlagun, Naharlagun - APSPCB",3.72,10,2024-10-01 23:00:00,2024-10-02 08:00:00,10.0
+site_5446,SO2,19,"Naharlagun, Naharlagun - APSPCB",3.72,8,2024-10-03 13:00:00,2024-10-03 20:00:00,8.0
+site_5446,SO2,44,"Naharlagun, Naharlagun - APSPCB",3.72,17,2024-10-07 18:00:00,2024-10-08 10:00:00,17.0
+site_5446,SO2,66,"Naharlagun, Naharlagun - APSPCB",3.72,13,2024-10-09 22:00:00,2024-10-10 10:00:00,13.0
+site_5446,SO2,250,"Naharlagun, Naharlagun - APSPCB",4.0,14,2024-10-23 14:00:00,2024-10-24 03:00:00,14.0
+site_5446,SO2,256,"Naharlagun, Naharlagun - APSPCB",4.0,6,2024-10-24 11:00:00,2024-10-24 16:00:00,6.0
+site_5446,SO2,265,"Naharlagun, Naharlagun - APSPCB",4.0,21,2024-10-25 11:00:00,2024-10-26 07:00:00,21.0
+site_5446,SO2,274,"Naharlagun, Naharlagun - APSPCB",4.0,9,2024-10-26 21:00:00,2024-10-27 05:00:00,9.0
+site_5446,SO2,278,"Naharlagun, Naharlagun - APSPCB",4.0,17,2024-10-27 10:00:00,2024-10-28 02:00:00,17.0
+site_5446,SO2,280,"Naharlagun, Naharlagun - APSPCB",4.0,7,2024-10-28 04:00:00,2024-10-28 10:00:00,7.0
+site_5446,SO2,282,"Naharlagun, Naharlagun - APSPCB",4.0,24,2024-10-28 12:00:00,2024-10-29 11:00:00,24.0
+site_5446,SO2,284,"Naharlagun, Naharlagun - APSPCB",4.0,16,2024-10-29 13:00:00,2024-10-30 04:00:00,16.0
+site_5586,SO2,156,"HIMUDA Complex Phase-1, Baddi - HPPCB",16.1,7,2024-10-09 16:00:00,2024-10-09 22:00:00,7.0
+site_5586,SO2,384,"HIMUDA Complex Phase-1, Baddi - HPPCB",15.7,6,2024-10-21 02:00:00,2024-10-21 07:00:00,6.0
+site_5586,SO2,395,"HIMUDA Complex Phase-1, Baddi - HPPCB",15.7,7,2024-10-22 01:00:00,2024-10-22 07:00:00,7.0
+site_5587,CO,1,"Bardowali, Agartala - Tripura SPCB",0.0,35,2024-10-01 00:00:00,2024-10-02 10:00:00,35.0
+site_5587,CO,2,"Bardowali, Agartala - Tripura SPCB",0.0,42,2024-10-03 11:00:00,2024-10-05 04:00:00,42.0
+site_5587,CO,4,"Bardowali, Agartala - Tripura SPCB",0.0,6,2024-10-07 10:00:00,2024-10-07 15:00:00,6.0
+site_5587,CO,5,"Bardowali, Agartala - Tripura SPCB",0.0,16,2024-10-07 18:00:00,2024-10-08 09:00:00,16.0
+site_5587,CO,6,"Bardowali, Agartala - Tripura SPCB",0.0,21,2024-10-08 12:00:00,2024-10-09 08:00:00,21.0
+site_5587,CO,7,"Bardowali, Agartala - Tripura SPCB",0.0,25,2024-10-09 10:00:00,2024-10-10 10:00:00,25.0
+site_5587,CO,8,"Bardowali, Agartala - Tripura SPCB",0.0,50,2024-10-10 13:00:00,2024-10-12 14:00:00,50.0
+site_5587,CO,9,"Bardowali, Agartala - Tripura SPCB",0.0,10,2024-10-12 20:00:00,2024-10-13 05:00:00,10.0
+site_5587,CO,10,"Bardowali, Agartala - Tripura SPCB",0.0,48,2024-10-13 16:00:00,2024-10-15 15:00:00,48.0
+site_5587,CO,11,"Bardowali, Agartala - Tripura SPCB",0.0,16,2024-10-16 21:00:00,2024-10-17 12:00:00,16.0
+site_5587,CO,12,"Bardowali, Agartala - Tripura SPCB",0.0,69,2024-10-17 15:00:00,2024-10-20 11:00:00,69.0
+site_5587,CO,13,"Bardowali, Agartala - Tripura SPCB",0.0,64,2024-10-21 10:00:00,2024-10-24 01:00:00,64.0
+site_5587,CO,14,"Bardowali, Agartala - Tripura SPCB",0.0,182,2024-10-24 10:00:00,2024-10-31 23:00:00,182.0
+site_5590,CO,60,"Zero Point GICI, Gangtok - SSPCB",0.06,7,2024-10-03 23:00:00,2024-10-04 05:00:00,7.0
+site_5590,CO,249,"Zero Point GICI, Gangtok - SSPCB",0.2,6,2024-10-17 01:00:00,2024-10-17 06:00:00,6.0
+site_5590,SO2,6,"Zero Point GICI, Gangtok - SSPCB",0.26,7,2024-10-01 17:00:00,2024-10-01 23:00:00,7.0
+site_5590,SO2,7,"Zero Point GICI, Gangtok - SSPCB",0.25,12,2024-10-02 00:00:00,2024-10-02 11:00:00,12.0
+site_5590,SO2,9,"Zero Point GICI, Gangtok - SSPCB",0.25,17,2024-10-02 13:00:00,2024-10-03 05:00:00,17.0
+site_5590,SO2,11,"Zero Point GICI, Gangtok - SSPCB",0.25,20,2024-10-03 07:00:00,2024-10-04 02:00:00,20.0
+site_5590,SO2,13,"Zero Point GICI, Gangtok - SSPCB",0.25,14,2024-10-04 08:00:00,2024-10-04 21:00:00,14.0
+site_5590,SO2,14,"Zero Point GICI, Gangtok - SSPCB",0.24,10,2024-10-04 22:00:00,2024-10-05 07:00:00,10.0
+site_5590,SO2,18,"Zero Point GICI, Gangtok - SSPCB",0.25,18,2024-10-07 18:00:00,2024-10-08 11:00:00,18.0
+site_5590,SO2,19,"Zero Point GICI, Gangtok - SSPCB",0.26,7,2024-10-08 12:00:00,2024-10-08 18:00:00,7.0
+site_5590,SO2,20,"Zero Point GICI, Gangtok - SSPCB",0.25,17,2024-10-08 19:00:00,2024-10-09 11:00:00,17.0
+site_5590,SO2,21,"Zero Point GICI, Gangtok - SSPCB",0.26,8,2024-10-09 12:00:00,2024-10-09 19:00:00,8.0
+site_5590,SO2,22,"Zero Point GICI, Gangtok - SSPCB",0.25,6,2024-10-09 20:00:00,2024-10-10 01:00:00,6.0
+site_5590,SO2,24,"Zero Point GICI, Gangtok - SSPCB",0.25,20,2024-10-10 16:00:00,2024-10-11 11:00:00,20.0
+site_5590,SO2,25,"Zero Point GICI, Gangtok - SSPCB",0.26,8,2024-10-11 12:00:00,2024-10-11 19:00:00,8.0
+site_5590,SO2,26,"Zero Point GICI, Gangtok - SSPCB",0.25,15,2024-10-11 20:00:00,2024-10-12 10:00:00,15.0
+site_5590,SO2,29,"Zero Point GICI, Gangtok - SSPCB",0.26,9,2024-10-12 13:00:00,2024-10-12 21:00:00,9.0
+site_5590,SO2,30,"Zero Point GICI, Gangtok - SSPCB",0.25,14,2024-10-12 22:00:00,2024-10-13 11:00:00,14.0
+site_5590,SO2,31,"Zero Point GICI, Gangtok - SSPCB",0.26,9,2024-10-13 12:00:00,2024-10-13 20:00:00,9.0
+site_5590,SO2,32,"Zero Point GICI, Gangtok - SSPCB",0.25,32,2024-10-13 21:00:00,2024-10-15 04:00:00,32.0
+site_5590,SO2,36,"Zero Point GICI, Gangtok - SSPCB",0.25,12,2024-10-15 11:00:00,2024-10-15 22:00:00,12.0
+site_5590,SO2,37,"Zero Point GICI, Gangtok - SSPCB",0.24,14,2024-10-15 23:00:00,2024-10-16 12:00:00,14.0
+site_5590,SO2,41,"Zero Point GICI, Gangtok - SSPCB",0.24,10,2024-10-16 22:00:00,2024-10-17 07:00:00,10.0
+site_5590,SO2,43,"Zero Point GICI, Gangtok - SSPCB",0.26,6,2024-10-17 13:00:00,2024-10-17 18:00:00,6.0
+site_5590,SO2,44,"Zero Point GICI, Gangtok - SSPCB",0.25,17,2024-10-17 19:00:00,2024-10-18 11:00:00,17.0
+site_5590,SO2,45,"Zero Point GICI, Gangtok - SSPCB",0.26,7,2024-10-18 12:00:00,2024-10-18 18:00:00,7.0
+site_5590,SO2,46,"Zero Point GICI, Gangtok - SSPCB",0.25,18,2024-10-18 19:00:00,2024-10-19 12:00:00,18.0
+site_5590,SO2,48,"Zero Point GICI, Gangtok - SSPCB",0.25,13,2024-10-19 18:00:00,2024-10-20 06:00:00,13.0
+site_5590,SO2,50,"Zero Point GICI, Gangtok - SSPCB",0.25,17,2024-10-20 08:00:00,2024-10-21 00:00:00,17.0
+site_5590,SO2,51,"Zero Point GICI, Gangtok - SSPCB",0.24,10,2024-10-21 01:00:00,2024-10-21 10:00:00,10.0
+site_5590,SO2,53,"Zero Point GICI, Gangtok - SSPCB",0.26,7,2024-10-21 13:00:00,2024-10-21 19:00:00,7.0
+site_5590,SO2,54,"Zero Point GICI, Gangtok - SSPCB",0.25,11,2024-10-21 20:00:00,2024-10-22 06:00:00,11.0
+site_5590,SO2,61,"Zero Point GICI, Gangtok - SSPCB",0.26,9,2024-10-22 22:00:00,2024-10-23 06:00:00,9.0
+site_5590,SO2,67,"Zero Point GICI, Gangtok - SSPCB",0.26,14,2024-10-23 22:00:00,2024-10-24 11:00:00,14.0
+site_5590,SO2,68,"Zero Point GICI, Gangtok - SSPCB",0.27,6,2024-10-24 12:00:00,2024-10-24 17:00:00,6.0
+site_5590,SO2,69,"Zero Point GICI, Gangtok - SSPCB",0.26,22,2024-10-24 18:00:00,2024-10-25 15:00:00,22.0
+site_5590,SO2,73,"Zero Point GICI, Gangtok - SSPCB",0.26,11,2024-10-31 13:00:00,2024-10-31 23:00:00,11.0
+site_5710,CO,3,"Sardar Patel Nagar, Dhanbad - JSPCB",0.11,24,2024-10-26 13:00:00,2024-10-27 12:00:00,24.0
+site_5710,CO,7,"Sardar Patel Nagar, Dhanbad - JSPCB",0.0,9,2024-10-30 12:00:00,2024-10-30 20:00:00,9.0

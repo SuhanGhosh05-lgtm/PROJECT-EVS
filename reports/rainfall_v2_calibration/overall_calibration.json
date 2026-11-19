@@ -1,0 +1,7 @@
+{
+    "test_records": 115712,
+    "actual_rain_frequency": 0.2512012582964602,
+    "mean_predicted_score": 0.23730867556042087,
+    "brier_score": 0.07229932817649296,
+    "log_loss": 0.2310086792118116
+}

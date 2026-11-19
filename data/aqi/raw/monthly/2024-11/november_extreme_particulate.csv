@@ -1,0 +1,13 @@
+station_id,parameter_name,unit,collected_at,value,station_name,state_name,city_name,source,latitude,longitude,run_id,plateau_flag
+site_113,PM10,µg/m³,2024-11-07 19:00:00,941.02,"Shadipur, Delhi - CPCB",Delhi,Delhi,cpcb_caaqm,28.6514781,77.1473105,161,False
+site_113,PM10,µg/m³,2024-11-17 20:00:00,942.0,"Shadipur, Delhi - CPCB",Delhi,Delhi,cpcb_caaqm,28.6514781,77.1473105,386,False
+site_113,PM10,µg/m³,2024-11-17 21:00:00,951.0,"Shadipur, Delhi - CPCB",Delhi,Delhi,cpcb_caaqm,28.6514781,77.1473105,387,False
+site_304,PM10,µg/m³,2024-11-01 22:00:00,999.99,"Gangapur Road, Nashik - MPCB",Maharashtra,Nashik,cpcb_caaqm,20.0073285,73.7762427,23,False
+site_304,PM10,µg/m³,2024-11-01 23:00:00,999.99,"Gangapur Road, Nashik - MPCB",Maharashtra,Nashik,cpcb_caaqm,20.0073285,73.7762427,23,False
+site_304,PM10,µg/m³,2024-11-02 00:00:00,999.99,"Gangapur Road, Nashik - MPCB",Maharashtra,Nashik,cpcb_caaqm,20.0073285,73.7762427,23,False
+site_304,PM10,µg/m³,2024-11-02 01:00:00,999.99,"Gangapur Road, Nashik - MPCB",Maharashtra,Nashik,cpcb_caaqm,20.0073285,73.7762427,23,False
+site_304,PM10,µg/m³,2024-11-13 09:00:00,977.74,"Gangapur Road, Nashik - MPCB",Maharashtra,Nashik,cpcb_caaqm,20.0073285,73.7762427,291,False
+site_304,PM2.5,µg/m³,2024-11-01 22:00:00,999.75,"Gangapur Road, Nashik - MPCB",Maharashtra,Nashik,cpcb_caaqm,20.0073285,73.7762427,23,False
+site_304,PM2.5,µg/m³,2024-11-01 23:00:00,907.72,"Gangapur Road, Nashik - MPCB",Maharashtra,Nashik,cpcb_caaqm,20.0073285,73.7762427,24,False
+site_308,PM10,µg/m³,2024-11-01 01:00:00,921.84,"Maninagar, Ahmedabad - GPCB",Gujarat,Ahmedabad,cpcb_caaqm,23.002657,72.591912,1,False
+site_308,PM10,µg/m³,2024-11-16 00:00:00,948.8,"Maninagar, Ahmedabad - GPCB",Gujarat,Ahmedabad,cpcb_caaqm,23.002657,72.591912,357,False

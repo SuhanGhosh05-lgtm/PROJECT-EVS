@@ -1,0 +1,33 @@
+{
+    "results": [
+        {
+            "model": "Persistence baseline",
+            "MAE": 24.617,
+            "RMSE": 40.346,
+            "R2": 0.8756
+        },
+        {
+            "model": "Random Forest",
+            "MAE": 28.308,
+            "RMSE": 42.942,
+            "R2": 0.859
+        },
+        {
+            "model": "Extra Trees",
+            "MAE": 29.78,
+            "RMSE": 44.157,
+            "R2": 0.8509
+        },
+        {
+            "model": "HistGradientBoosting",
+            "MAE": 32.191,
+            "RMSE": 45.925,
+            "R2": 0.8388
+        }
+    ],
+    "best_model": "Random Forest",
+    "deployment_ready": false,
+    "test_start_date": "2024-11-13 00:00:00",
+    "training_samples": 1030,
+    "testing_samples": 482
+}

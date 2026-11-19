@@ -1,0 +1,26 @@
+{
+    "model": "HistGradientBoosting V2",
+    "threshold": 0.34000000000000014,
+    "dataset_records": 771408,
+    "test_records": 115712,
+    "test_start": "2018-05-09 02:00:00",
+    "test_end": "2020-01-01 17:00:00",
+    "temporal_train_validation_gap_ok": true,
+    "temporal_validation_test_gap_ok": true,
+    "saved_test_record_count_matches": true,
+    "saved_test_dates_match": true,
+    "overall_metrics": {
+        "records": 115712,
+        "accuracy": 0.8940991426991151,
+        "precision": 0.780900190463461,
+        "recall": 0.8040045412323253,
+        "f1": 0.7922839610807879,
+        "roc_auc": 0.953944004352589,
+        "pr_auc": 0.8927004308089043,
+        "true_negatives": 80088,
+        "false_positives": 6557,
+        "false_negatives": 5697,
+        "true_positives": 23370
+    },
+    "total_prediction_errors": 12254
+}
