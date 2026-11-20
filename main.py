@@ -51,8 +51,48 @@ wrf_ai = load_model("wrf_rf_model.pkl")
 
 
 # =========================================================
-# 3. COMMON UTILITIES
+# 3. COMMON UTILITIES & INDIA-LOCKED GEOCODING
 # =========================================================
+
+INDIAN_STATE_HUBS = {
+    "andhra pradesh": "Amaravati",
+    "arunachal pradesh": "Itanagar",
+    "assam": "Guwahati",
+    "bihar": "Patna",
+    "chhattisgarh": "Raipur",
+    "goa": "Panaji",
+    "gujarat": "Ahmedabad",
+    "haryana": "Gurugram",
+    "himachal pradesh": "Shimla",
+    "jharkhand": "Ranchi",
+    "karnataka": "Bengaluru",
+    "kerala": "Thiruvananthapuram",
+    "madhya pradesh": "Bhopal",
+    "maharashtra": "Mumbai",
+    "manipur": "Imphal",
+    "meghalaya": "Shillong",
+    "mizoram": "Aizawl",
+    "nagaland": "Kohima",
+    "odisha": "Bhubaneswar",
+    "punjab": "Chandigarh",
+    "rajasthan": "Jaipur",
+    "sikkim": "Gangtok",
+    "tamil nadu": "Chennai",
+    "telangana": "Hyderabad",
+    "tripura": "Agartala",
+    "uttar pradesh": "Lucknow",
+    "uttarakhand": "Dehradun",
+    "west bengal": "Kolkata",
+    "delhi": "New Delhi",
+    "jammu and kashmir": "Srinagar",
+    "ladakh": "Leh",
+    "puducherry": "Puducherry",
+    "chandigarh": "Chandigarh",
+    "andaman and nicobar islands": "Port Blair",
+    "dadra and nagar haveli and daman and diu": "Daman",
+    "lakshadweep": "Kavaratti",
+}
+
 
 def safe_get(url, params=None, timeout=12):
     response = requests.get(url, params=params, timeout=timeout)
@@ -62,21 +102,35 @@ def safe_get(url, params=None, timeout=12):
 
 def get_live_coordinates(location: str):
     url = "https://geocoding-api.open-meteo.com/v1/search"
+    raw_query = location.strip()
+    mapped_query = INDIAN_STATE_HUBS.get(raw_query.lower(), raw_query)
 
     try:
         data = safe_get(
             url,
-            params={"name": location, "count": 1, "format": "json"}
+            params={
+                "name": mapped_query,
+                "count": 5,
+                "country_code": "IN",
+                "format": "json",
+            },
         )
+        results = data.get("results") or []
+
+        # Fallback to global search only if no Indian match exists
+        if not results:
+            data = safe_get(
+                url,
+                params={"name": raw_query, "count": 1, "format": "json"},
+            )
+            results = data.get("results") or []
     except requests.RequestException as exc:
         raise HTTPException(status_code=502, detail=f"Geocoding service error: {exc}")
-
-    results = data.get("results", [])
 
     if not results:
         raise HTTPException(
             status_code=404,
-            detail=f"Location '{location}' not found."
+            detail=f"Location '{location}' not found.",
         )
 
     place = results[0]
@@ -85,7 +139,7 @@ def get_live_coordinates(location: str):
         float(place["latitude"]),
         float(place["longitude"]),
         place.get("country", "India"),
-        place.get("name", location)
+        place.get("name", mapped_query),
     )
 
 
@@ -180,7 +234,7 @@ def calculate_aqi_range(aqi, margin=15):
     return {
         "lower_limit": lower_limit,
         "upper_limit": upper_limit,
-        "display": f"{lower_limit}-{upper_limit}"
+        "display": f"{lower_limit}-{upper_limit}",
     }
 
 
@@ -225,6 +279,9 @@ def calculate_pollutant_subindex(concentration, breakpoints):
             result = ((high_i - low_i) / (high_c - low_c)) * (concentration - low_c) + low_i
             return round(result, 1)
 
+    if concentration > breakpoints[-1][1]:
+        return 500.0
+
     return None
 
 
@@ -262,7 +319,7 @@ def calculate_indian_cpcb_aqi(pm25, pm10):
 
 
 # =========================================================
-# 5. AQI LIVE SOURCES (WAQI -> OPEN-METEO CAMS) & FORECAST
+# 5. AQI LIVE SOURCES (WAQI -> OPEN-METEO CAMS) & CPCB FORECAST
 # =========================================================
 
 def get_waqi_live_data(lat, lon):
@@ -287,13 +344,17 @@ def get_waqi_live_data(lat, lon):
         pm25_sub = iaqi.get("pm25", {}).get("v") if isinstance(iaqi.get("pm25"), dict) else None
         pm10_sub = iaqi.get("pm10", {}).get("v") if isinstance(iaqi.get("pm10"), dict) else None
 
+        pm25_ugm3 = epa_aqi_to_ugm3("pm25", pm25_sub)
+        pm10_ugm3 = epa_aqi_to_ugm3("pm10", pm10_sub)
+        cpcb_aqi = calculate_indian_cpcb_aqi(pm25_ugm3, pm10_ugm3)
+
         station = data.get("city", {})
 
         return {
             "available": True,
-            "aqi": float(aqi_value),
-            "pm25_ugm3": epa_aqi_to_ugm3("pm25", pm25_sub),
-            "pm10_ugm3": epa_aqi_to_ugm3("pm10", pm10_sub),
+            "aqi": cpcb_aqi if cpcb_aqi is not None else float(aqi_value),
+            "pm25_ugm3": pm25_ugm3,
+            "pm10_ugm3": pm10_ugm3,
             "station_name": station.get("name", "WAQI monitoring station"),
             "measurement_time": data.get("time", {}).get("s"),
             "dominant_pollutant": data.get("dominentpol"),
@@ -315,7 +376,7 @@ def get_cams_live_aqi(lat, lon):
                 "current": "pm2_5,pm10",
                 "timezone": "auto",
             },
-            timeout=12
+            timeout=12,
         )
 
         current = data.get("current", {})
@@ -345,7 +406,7 @@ def get_cams_live_aqi(lat, lon):
 
 
 def get_open_meteo_aqi_prediction(lat, lon):
-    """Priority 1 AQI Prediction: Open-Meteo 48-hour forecast."""
+    """Priority 1 AQI Prediction: Open-Meteo 48-hour forecast on Indian CPCB scale."""
     url = "https://air-quality-api.open-meteo.com/v1/air-quality"
 
     try:
@@ -354,44 +415,53 @@ def get_open_meteo_aqi_prediction(lat, lon):
             params={
                 "latitude": lat,
                 "longitude": lon,
-                "hourly": "us_aqi",
+                "hourly": "pm2_5,pm10",
                 "forecast_days": 2,
                 "timezone": "auto",
             },
-            timeout=12
+            timeout=12,
         )
 
         hourly = data.get("hourly", {})
         times = hourly.get("time", [])
-        values = hourly.get("us_aqi", [])
+        pm25_list = hourly.get("pm2_5", [])
+        pm10_list = hourly.get("pm10", [])
 
-        if not times or not values:
+        if not times or (not pm25_list and not pm10_list):
             return {"available": False}
 
-        now = datetime.datetime.now()
-        today_str = now.strftime("%Y-%m-%d")
-        tomorrow_str = (now + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
-        current_hour_dt = now.replace(minute=0, second=0, microsecond=0)
+        # Align with target location's timezone using utc_offset_seconds
+        utc_offset = int(data.get("utc_offset_seconds", 0) or 0)
+        local_now = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=utc_offset)
+        local_now = local_now.replace(tzinfo=None)
+
+        today_str = local_now.strftime("%Y-%m-%d")
+        tomorrow_str = (local_now + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+        current_hour_dt = local_now.replace(minute=0, second=0, microsecond=0)
 
         today_vals = []
         tomorrow_vals = []
         next_hour_val = None
 
-        for t, val in zip(times, values):
-            if val is None:
+        for idx, t in enumerate(times):
+            pm25_v = float(pm25_list[idx]) if idx < len(pm25_list) and pm25_list[idx] is not None else None
+            pm10_v = float(pm10_list[idx]) if idx < len(pm10_list) and pm10_list[idx] is not None else None
+            cpcb_val = calculate_indian_cpcb_aqi(pm25_v, pm10_v)
+
+            if cpcb_val is None:
                 continue
+
             dt = datetime.datetime.fromisoformat(t)
             if dt < current_hour_dt:
                 continue
 
-            val_f = float(val)
             if next_hour_val is None and dt > current_hour_dt:
-                next_hour_val = round(val_f, 1)
+                next_hour_val = round(cpcb_val, 1)
 
             if t.startswith(today_str):
-                today_vals.append(val_f)
+                today_vals.append(cpcb_val)
             elif t.startswith(tomorrow_str):
-                tomorrow_vals.append(val_f)
+                tomorrow_vals.append(cpcb_val)
 
         if not today_vals and not tomorrow_vals:
             return {"available": False}
@@ -401,7 +471,7 @@ def get_open_meteo_aqi_prediction(lat, lon):
 
         return {
             "available": True,
-            "source": "Open-Meteo Air Quality Forecast",
+            "source": "Open-Meteo Air Quality Forecast (CPCB Scale)",
             "predicted_aqi_next_hour": next_hour_val if next_hour_val is not None else pred_today,
             "predicted_aqi_today": pred_today,
             "predicted_aqi_tomorrow": pred_tomorrow,
@@ -444,7 +514,7 @@ def predict_live_rainfall(location: str = "Kolkata"):
                     "wind_speed_10m_max,wind_speed_10m_min"
                 ),
                 "timezone": "auto",
-            }
+            },
         )
     except requests.RequestException as exc:
         raise HTTPException(status_code=502, detail=f"Weather API error: {exc}")
@@ -615,7 +685,7 @@ def predict_live_aqi(location: str = "Kolkata"):
         station_name = waqi.get("station_name")
         measurement_time = waqi.get("measurement_time")
         dominant_pollutant = waqi.get("dominant_pollutant")
-        category = get_waqi_category(live_aqi)
+        category = get_indian_aqi_category(live_aqi)
     else:
         cams = get_cams_live_aqi(lat, lon)
         if cams.get("available"):
@@ -1107,7 +1177,7 @@ def fetch_calendar_aqi(lat: float, lon: float, target_date: datetime.date):
             "aqi_range": calculate_aqi_range(aqi_val),
             "pm25_ugm3": waqi.get("pm25_ugm3"),
             "pm10_ugm3": waqi.get("pm10_ugm3"),
-            "category": get_waqi_category(aqi_val),
+            "category": get_indian_aqi_category(aqi_val),
             "visual_trigger": get_aqi_visual_trigger(aqi_val),
         }
 
@@ -1232,8 +1302,8 @@ def get_complete_dashboard(location: str = "Kolkata"):
 def health_check():
     return {
         "status": "EVS Climate AI backend is running",
-        "live_aqi_priority": ["WAQI", "Open-Meteo CAMS"],
-        "aqi_prediction_priority": ["Open-Meteo Forecast", "WAQI Fallback"],
+        "live_aqi_priority": ["WAQI (CPCB Breakpoints)", "Open-Meteo CAMS"],
+        "aqi_prediction_priority": ["Open-Meteo Forecast (CPCB Scale)", "WAQI Fallback"],
         "calendar_endpoint": "/calendar-forecast?location=Kolkata&year=2026&month=11&day=19",
         "waqi_token_configured": bool(WAQI_API_TOKEN),
     }
