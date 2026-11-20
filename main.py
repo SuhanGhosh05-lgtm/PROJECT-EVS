@@ -5,6 +5,7 @@ import datetime
 from pathlib import Path
 
 import joblib
+import pandas as pd
 import requests
 
 from dotenv import load_dotenv
@@ -38,9 +39,14 @@ app.add_middleware(
 
 def load_model(filename):
     path = BASE_DIR / "models" / filename
+    if not path.exists():
+        return None
     try:
-        return joblib.load(path) if path.exists() else None
-    except Exception:
+        model = joblib.load(path)
+        print(f"[MODEL] Loaded {filename}: {type(model).__name__}")
+        return model
+    except Exception as exc:
+        print(f"[MODEL] Failed to load {filename}: {type(exc).__name__}: {exc}")
         return None
 
 
@@ -48,6 +54,22 @@ rainfall_ai = load_model("rainfall_ml_model.pkl")
 climate_ai = load_model("climate_rf_model.pkl")
 disaster_ai = load_model("disaster_rf_model.pkl")
 wrf_ai = load_model("wrf_rf_model.pkl")
+
+
+def predict_rainfall_flag(temp, humidity, wind_speed, pressure):
+    if not rainfall_ai:
+        return None, "Rainfall model unavailable"
+    try:
+        features_df = pd.DataFrame(
+            [[temp, humidity, wind_speed, pressure]],
+            columns=["tempC", "humidity", "windspeedKmph", "pressure"],
+        )
+        pred = int(rainfall_ai.predict(features_df)[0])
+        verdict = "Rain Expected Today" if pred == 1 else "No Rain Expected Today"
+        return pred, verdict
+    except Exception as exc:
+        print(f"[MODEL] Rainfall prediction error: {exc}")
+        return 0, "Rainfall model prediction unavailable"
 
 
 # =========================================================
@@ -430,7 +452,6 @@ def get_open_meteo_aqi_prediction(lat, lon):
         if not times or (not pm25_list and not pm10_list):
             return {"available": False}
 
-        # Align with target location's timezone using utc_offset_seconds
         utc_offset = int(data.get("utc_offset_seconds", 0) or 0)
         local_now = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=utc_offset)
         local_now = local_now.replace(tzinfo=None)
@@ -546,18 +567,10 @@ def predict_live_rainfall(location: str = "Kolkata"):
     visibility_list = hourly.get("visibility", [10000])
     visibility_km = round((visibility_list[0] or 10000) / 1000, 1)
 
-    ai_pred = 0
-    ai_verdict = "Rainfall model unavailable"
-
-    if rainfall_ai:
-        try:
-            ai_pred = int(rainfall_ai.predict([[temp, humidity, wind_speed, pressure]])[0])
-            ai_verdict = "Rain Expected Today" if ai_pred == 1 else "No Rain Expected Today"
-        except Exception:
-            ai_verdict = "Rainfall model prediction unavailable"
+    ai_pred, ai_verdict = predict_rainfall_flag(temp, humidity, wind_speed, pressure)
 
     weather_label, visual_trigger, corrected_rain = classify_weather_condition(
-        wmo_code, humidity, temp, rain_chance, ai_pred
+        wmo_code, humidity, temp, rain_chance, ai_pred or 0
     )
 
     wind_min = max(0.0, round(wind_speed - 2, 1))
@@ -1085,17 +1098,10 @@ def fetch_calendar_weather(lat: float, lon: float, target_date: datetime.date):
 
     rain_prob = min(95, max(10, int(precip_mm * 12))) if precip_mm > 0.2 else 10
 
-    ai_pred = 0
-    ai_verdict = "No Rain Expected"
-    if rainfall_ai:
-        try:
-            ai_pred = int(rainfall_ai.predict([[t_mean, avg_humidity, wind_max, avg_pressure]])[0])
-            ai_verdict = "Rain Expected" if ai_pred == 1 else "No Rain Expected"
-        except Exception:
-            pass
+    ai_pred, ai_verdict = predict_rainfall_flag(t_mean, avg_humidity, wind_max, avg_pressure)
 
     condition, visual_trigger, corrected_rain = classify_weather_condition(
-        wmo_code, avg_humidity, t_mean, rain_prob, ai_pred
+        wmo_code, avg_humidity, t_mean, rain_prob, ai_pred or 0
     )
 
     return {
