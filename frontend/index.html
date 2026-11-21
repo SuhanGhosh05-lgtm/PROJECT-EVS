@@ -1811,43 +1811,52 @@
           const intensity = Math.max(0.6, Math.min(1.0, aqiHazeIntensity));
           const aqiVal = liveWaqiScore != null && !Number.isNaN(Number(liveWaqiScore)) ? Number(liveWaqiScore) : 185;
 
-          // Match the WAQI bar spectrum stops: Teal/Good (<=50), Yellow/Moderate (51-100),
-          // Orange/Sensitive (101-150), Coral Red/Unhealthy (151-200), Purple/Very Unhealthy (201-300), Pink/Hazardous (300+)
-          let stops = ['#1c1512', '#451a03', '#7c2d12', '#291711'];
-          let plumeRgb = '154, 52, 18';
-          let moteRgb = '253, 186, 116';
+          // Interpolate smoothly along the WAQI color bar stops:
+          // 0 Good (#14b8a6) -> 75 Moderate (#eab308) -> 125 Sensitive (#f97316)
+          // -> 175 Unhealthy (#ef4444) -> 250 Very Unhealthy (#a855f7) -> 325+ Hazardous (#ec4899)
+          const barStops = [
+            { at: 0,   rgb: [20, 184, 166] },
+            { at: 75,  rgb: [234, 179, 8] },
+            { at: 125, rgb: [249, 115, 22] },
+            { at: 175, rgb: [239, 68, 68] },
+            { at: 250, rgb: [168, 85, 247] },
+            { at: 325, rgb: [236, 72, 153] }
+          ];
 
-          if (aqiVal <= 50) {
-            stops = ['#06282b', '#0b4f4a', '#115e59', '#04181c'];
-            plumeRgb = '20, 184, 166';
-            moteRgb = '153, 246, 228';
-          } else if (aqiVal <= 100) {
-            stops = ['#242008', '#4d4108', '#715b0c', '#181505'];
-            plumeRgb = '234, 179, 8';
-            moteRgb = '254, 240, 138';
-          } else if (aqiVal <= 150) {
-            stops = ['#291406', '#5c2408', '#9a3412', '#1a0c04'];
-            plumeRgb = '249, 115, 22';
-            moteRgb = '254, 215, 170';
-          } else if (aqiVal <= 200) {
-            stops = ['#290a0d', '#5c141c', '#991b1b', '#1a0608'];
-            plumeRgb = '248, 113, 113';
-            moteRgb = '254, 202, 202';
-          } else if (aqiVal <= 300) {
-            stops = ['#1b0a2e', '#3b1366', '#581c87', '#10061c'];
-            plumeRgb = '168, 85, 247';
-            moteRgb = '233, 213, 255';
-          } else {
-            stops = ['#2b081b', '#5c0f38', '#831843', '#1a0510'];
-            plumeRgb = '236, 72, 153';
-            moteRgb = '251, 207, 232';
+          const clampedAqi = Math.max(0, Math.min(325, aqiVal));
+          let s0 = barStops[0];
+          let s1 = barStops[barStops.length - 1];
+          for (let i = 0; i < barStops.length - 1; i++) {
+            if (clampedAqi >= barStops[i].at && clampedAqi <= barStops[i + 1].at) {
+              s0 = barStops[i];
+              s1 = barStops[i + 1];
+              break;
+            }
           }
+          const span = Math.max(1, s1.at - s0.at);
+          const mix = Math.max(0, Math.min(1, (clampedAqi - s0.at) / span));
+          const r = Math.round(s0.rgb[0] + (s1.rgb[0] - s0.rgb[0]) * mix);
+          const grn = Math.round(s0.rgb[1] + (s1.rgb[1] - s0.rgb[1]) * mix);
+          const b = Math.round(s0.rgb[2] + (s1.rgb[2] - s0.rgb[2]) * mix);
+
+          const toHex = (n) => Math.max(0, Math.min(255, n)).toString(16).padStart(2, '0');
+          const scaleChannel = (c, mult) => Math.round(c * mult);
+          const topHex = `#${toHex(scaleChannel(r, 0.16))}${toHex(scaleChannel(grn, 0.16))}${toHex(scaleChannel(b, 0.16))}`;
+          const midHex = `#${toHex(scaleChannel(r, 0.34))}${toHex(scaleChannel(grn, 0.34))}${toHex(scaleChannel(b, 0.34))}`;
+          const lowHex = `#${toHex(scaleChannel(r, 0.56))}${toHex(scaleChannel(grn, 0.56))}${toHex(scaleChannel(b, 0.56))}`;
+          const baseHex = `#${toHex(scaleChannel(r, 0.11))}${toHex(scaleChannel(grn, 0.11))}${toHex(scaleChannel(b, 0.11))}`;
+
+          const plumeRgb = `${r}, ${grn}, ${b}`;
+          const moteR = Math.min(255, Math.round(r + (255 - r) * 0.65));
+          const moteG = Math.min(255, Math.round(grn + (255 - grn) * 0.65));
+          const moteB = Math.min(255, Math.round(b + (255 - b) * 0.65));
+          const moteRgb = `${moteR}, ${moteG}, ${moteB}`;
 
           const g = bgCtx.createLinearGradient(0, 0, 0, h);
-          g.addColorStop(0, stops[0]);
-          g.addColorStop(0.42, stops[1]);
-          g.addColorStop(0.78, stops[2]);
-          g.addColorStop(1, stops[3]);
+          g.addColorStop(0, topHex);
+          g.addColorStop(0.42, midHex);
+          g.addColorStop(0.78, lowHex);
+          g.addColorStop(1, baseHex);
           bgCtx.fillStyle = g;
           bgCtx.fillRect(0, 0, w, h);
 
