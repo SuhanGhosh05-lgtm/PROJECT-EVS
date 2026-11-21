@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
   <title>Klima — EVS Climate AI</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -10,7 +10,7 @@
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
     :root {
-      --glass-bg: rgba(8, 15, 30, 0.78);
+      --glass-bg: rgba(8, 15, 30, 0.80);
       --glass-border: rgba(125, 211, 252, 0.25);
       --accent: #38bdf8;
       --text-main: #f8fafc;
@@ -20,11 +20,13 @@
       box-sizing: border-box;
       margin: 0;
       padding: 0;
+      -webkit-tap-highlight-color: transparent;
     }
 
     html, body {
       width: 100%;
       height: 100%;
+      height: 100dvh;
       overflow: hidden;
       background: #010207;
       color: var(--text-main);
@@ -88,14 +90,22 @@
       border: 1px solid rgba(56, 189, 248, 0.85);
       box-shadow: 0 0 20px rgba(56, 189, 248, 0.45);
       backdrop-filter: blur(12px);
-      padding: 6px 13px;
+      padding: 5px 11px;
       border-radius: 999px;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       white-space: nowrap;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
+    }
+
+    @media (min-width: 640px) {
+      .pointer-pill {
+        padding: 6px 13px;
+        gap: 8px;
+        font-size: 12px;
+      }
     }
 
     .pointer-dot {
@@ -114,67 +124,116 @@
 
     .top-hud {
       position: fixed;
-      top: 10px;
+      top: max(6px, env(safe-area-inset-top));
       left: 50%;
       transform: translateX(-50%);
       z-index: 25;
-      width: min(980px, calc(100vw - 16px));
+      width: min(980px, calc(100vw - 12px));
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 4px;
+    }
+
+    @media (min-width: 640px) {
+      .top-hud {
+        top: max(8px, env(safe-area-inset-top));
+        width: min(980px, calc(100vw - 16px));
+        gap: 4px;
+      }
     }
 
     .glass-bar {
       background: var(--glass-bg);
       border: 1px solid var(--glass-border);
       backdrop-filter: blur(16px);
-      border-radius: 16px;
+      border-radius: 12px;
+      box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45);
+    }
+
+    @media (min-width: 640px) {
+      .glass-bar {
+        border-radius: 14px;
+      }
+    }
+
+    .glass-bar {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(16px);
+      border-radius: 14px;
       box-shadow: 0 14px 36px rgba(0, 0, 0, 0.5);
     }
 
+    @media (min-width: 640px) {
+      .glass-bar {
+        border-radius: 16px;
+      }
+    }
+
     .glass-card {
-      background: rgba(9, 17, 34, 0.78);
+      background: rgba(9, 17, 34, 0.80);
       border: 1px solid rgba(148, 197, 255, 0.18);
       backdrop-filter: blur(16px);
-      border-radius: 18px;
+      border-radius: 16px;
       box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
       transition: transform 0.22s ease, border-color 0.22s ease;
     }
 
-    .glass-card:hover {
-      transform: translateY(-2px);
-      border-color: rgba(125, 211, 252, 0.34);
+    @media (min-width: 640px) {
+      .glass-card {
+        border-radius: 18px;
+      }
+    }
+
+    @media (hover: hover) {
+      .glass-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(125, 211, 252, 0.34);
+      }
     }
 
     .prediction-card {
       background: linear-gradient(145deg, rgba(14, 30, 62, 0.88), rgba(9, 19, 40, 0.84));
       border: 1px solid rgba(56, 189, 248, 0.52);
       box-shadow: 0 0 24px rgba(56, 189, 248, 0.14), inset 0 1px 0 rgba(186, 230, 253, 0.22);
-      border-radius: 18px;
+      border-radius: 16px;
       backdrop-filter: blur(16px);
+    }
+
+    @media (min-width: 640px) {
+      .prediction-card {
+        border-radius: 18px;
+      }
     }
 
     .aqi-prism-card {
       background: linear-gradient(145deg, rgba(13, 38, 48, 0.9), rgba(29, 19, 54, 0.86));
       border: 1px solid rgba(45, 212, 191, 0.45);
       box-shadow: 0 0 26px rgba(20, 184, 166, 0.14), inset 0 1px 0 rgba(153, 246, 228, 0.2);
-      border-radius: 18px;
+      border-radius: 16px;
       backdrop-filter: blur(16px);
+    }
+
+    @media (min-width: 640px) {
+      .aqi-prism-card {
+        border-radius: 18px;
+      }
     }
 
     .prediction-badge {
       display: inline-flex;
       align-items: center;
-      gap: 5px;
-      padding: 2px 9px;
+      gap: 4px;
+      padding: 2px 8px;
       border-radius: 999px;
-      font-size: 10px;
+      font-size: 9.5px;
       font-weight: 800;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.05em;
       text-transform: uppercase;
       color: #e0f2fe;
       background: linear-gradient(90deg, rgba(2, 132, 199, 0.5), rgba(99, 102, 241, 0.45));
       border: 1px solid rgba(125, 211, 252, 0.55);
+      white-space: nowrap;
     }
 
     #dashboard-view {
@@ -182,16 +241,29 @@
       inset: 0;
       z-index: 15;
       overflow-y: auto;
-      padding: 132px 14px 86px;
+      -webkit-overflow-scrolling: touch;
+      padding: calc(122px + env(safe-area-inset-top)) 10px calc(68px + env(safe-area-inset-bottom));
       opacity: 0;
       visibility: hidden;
       transform: translateY(18px) scale(0.985);
       transition: opacity 0.45s ease, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.45s;
     }
 
+    @media (min-width: 640px) {
+      #dashboard-view {
+        padding: calc(104px + env(safe-area-inset-top)) 16px calc(74px + env(safe-area-inset-bottom));
+      }
+    }
+
     @media (min-width: 768px) {
       #dashboard-view {
-        padding: 112px 18px 88px;
+        padding: calc(96px + env(safe-area-inset-top)) 18px calc(78px + env(safe-area-inset-bottom));
+      }
+    }
+
+    @media (min-width: 768px) {
+      #dashboard-view {
+        padding: calc(114px + env(safe-area-inset-top)) 18px calc(88px + env(safe-area-inset-bottom));
       }
     }
 
@@ -202,9 +274,9 @@
     }
 
     .nav-pill {
-      padding: 6px 11px;
-      border-radius: 11px;
-      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 10px;
+      font-size: 11.5px;
       font-weight: 600;
       color: #cbd5e1;
       background: rgba(255, 255, 255, 0.05);
@@ -212,6 +284,15 @@
       cursor: pointer;
       transition: all 0.2s ease;
       white-space: nowrap;
+      touch-action: manipulation;
+    }
+
+    @media (min-width: 640px) {
+      .nav-pill {
+        padding: 6px 11px;
+        border-radius: 11px;
+        font-size: 12px;
+      }
     }
 
     .nav-pill:hover {
@@ -239,12 +320,19 @@
     .cal-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
-      gap: 5px;
+      gap: 4px;
       text-align: center;
     }
 
+    @media (min-width: 640px) {
+      .cal-grid {
+        gap: 5px;
+      }
+    }
+
     .cal-day-btn {
-      padding: 7px 0;
+      padding: 8px 0;
+      min-height: 34px;
       border-radius: 8px;
       font-size: 12px;
       font-weight: 600;
@@ -253,6 +341,7 @@
       border: 1px solid transparent;
       cursor: pointer;
       transition: all 0.15s ease;
+      touch-action: manipulation;
     }
 
     .cal-day-btn:hover {
@@ -272,12 +361,32 @@
       font-weight: 800;
     }
 
+    @keyframes aqiCharBob {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-3.5px); }
+    }
+
+    @keyframes aqiCharStruggle {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(2px) rotate(-1.6deg); }
+    }
+
+    .aqi-char-anim-calm {
+      animation: aqiCharBob 3.2s ease-in-out infinite;
+      transform-origin: center bottom;
+    }
+
+    .aqi-char-anim-alert {
+      animation: aqiCharStruggle 2.4s ease-in-out infinite;
+      transform-origin: center bottom;
+    }
+
     #app-notice.scrolled-compact {
       display: inline-flex;
       align-items: center;
       gap: 6px;
       width: fit-content;
-      max-width: min(360px, 100%);
+      max-width: min(340px, 100%);
       padding: 3px 10px;
       border-radius: 999px;
       font-size: 10px;
@@ -290,21 +399,56 @@
 
     .bottom-fx-bar {
       position: fixed;
-      bottom: 12px;
+      bottom: max(6px, env(safe-area-inset-bottom));
       left: 50%;
       transform: translateX(-50%);
       z-index: 25;
       display: flex;
       align-items: center;
-      gap: 6px;
-      padding: 6px 10px;
+      gap: 3px;
+      padding: 3px 6px;
       border-radius: 999px;
-      max-width: calc(100vw - 16px);
+      max-width: calc(100vw - 12px);
       overflow-x: auto;
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    .bottom-fx-bar::-webkit-scrollbar {
+      display: none;
+    }
+
+    @media (min-width: 640px) {
+      .bottom-fx-bar {
+        bottom: max(8px, env(safe-area-inset-bottom));
+        gap: 4px;
+        padding: 4px 8px;
+        max-width: calc(100vw - 16px);
+      }
     }
 
     .fx-chip {
-      padding: 5px 11px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 10.5px;
+      font-weight: 600;
+      color: #cbd5e1;
+      background: transparent;
+      border: 1px solid transparent;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.18s ease;
+      touch-action: manipulation;
+    }
+
+    @media (min-width: 640px) {
+      .fx-chip {
+        padding: 3.5px 10px;
+      }
+    }
+
+    .fx-chip {
+      padding: 5px 9px;
       border-radius: 999px;
       font-size: 11px;
       font-weight: 600;
@@ -314,6 +458,13 @@
       cursor: pointer;
       white-space: nowrap;
       transition: all 0.18s ease;
+      touch-action: manipulation;
+    }
+
+    @media (min-width: 640px) {
+      .fx-chip {
+        padding: 5px 11px;
+      }
     }
 
     .fx-chip:hover {
@@ -342,24 +493,24 @@
     <div class="pointer-pill">
       <span class="pointer-dot"></span>
       <span id="label-city-name">Kolkata</span>
-      <span id="label-city-coords" class="text-sky-300 font-mono text-[11px]">22.57°N, 88.36°E</span>
+      <span id="label-city-coords" class="text-sky-300 font-mono text-[10px] sm:text-[11px]">22.57°N, 88.36°E</span>
     </div>
     <div class="pointer-stem"></div>
   </div>
 
   <header class="top-hud">
-    <div class="glass-bar px-2.5 py-2 flex flex-wrap items-center gap-1.5 sm:gap-2">
-      <div class="flex items-center gap-2 pr-2 border-r border-white/10">
-        <span class="w-2.5 h-2.5 rounded-full bg-sky-400 shadow-[0_0_10px_#38bdf8]"></span>
+    <div class="glass-bar px-2 py-1 sm:px-2.5 sm:py-1.5 flex items-center gap-1.5 sm:gap-2">
+      <div class="flex items-center gap-1.5 sm:gap-2 pr-1.5 sm:pr-2 border-r border-white/10 shrink-0">
+        <span class="w-2 h-2 rounded-full bg-sky-400 shadow-[0_0_10px_#38bdf8]"></span>
         <span class="font-extrabold text-xs sm:text-sm tracking-wide text-sky-100">Klima</span>
       </div>
 
-      <div class="relative flex-1 min-w-[135px]">
+      <div class="relative flex-1 min-w-[105px]">
         <input
           id="city-input"
           type="text"
           placeholder="Search city or state..."
-          class="w-full bg-transparent text-xs sm:text-sm text-white placeholder-slate-400 outline-none px-1 py-1"
+          class="w-full bg-transparent text-xs text-white placeholder-slate-400 outline-none px-1 py-0.5"
           autocomplete="off"
         />
         <div
@@ -373,86 +524,88 @@
         type="text"
         value="http://127.0.0.1:8000"
         title="FastAPI Backend Base URL"
-        class="hidden lg:block w-44 bg-slate-900/80 border border-white/10 rounded-lg px-2 py-1 text-[11px] font-mono text-sky-200 outline-none focus:border-sky-400"
+        class="hidden lg:block w-40 bg-slate-900/80 border border-white/10 rounded-md px-2 py-0.5 text-[10.5px] font-mono text-sky-200 outline-none focus:border-sky-400"
       />
-      <button id="reconnect-btn" type="button" class="nav-pill text-[11px] sm:text-xs" title="Reconnect to FastAPI Backend">🔌 Sync</button>
-      <button id="search-btn" type="button" class="nav-pill bg-sky-500/20 border-sky-400/40 text-sky-100 text-[11px] sm:text-xs">Zoom</button>
-      <button id="sun-toggle-btn" type="button" class="nav-pill border-amber-400/40 text-amber-200 text-[11px] sm:text-xs" title="Toggle between Contrasted Solar Mode and Classic Mode">☀️ Sun: Contrasted</button>
-      <button id="spin-boost-btn" type="button" class="nav-pill text-[11px] sm:text-xs">🌀 Spin</button>
-      <button id="globe-view-btn" type="button" class="nav-pill text-[11px] sm:text-xs">🌍 Globe</button>
+      <div class="flex items-center gap-1 shrink-0">
+        <button id="reconnect-btn" type="button" class="nav-pill px-2 py-0.5 text-[10.5px] sm:text-[11px]" title="Reconnect to FastAPI Backend">🔌 <span class="hidden sm:inline">Sync</span></button>
+        <button id="search-btn" type="button" class="nav-pill bg-sky-500/20 border-sky-400/40 text-sky-100 px-2 py-0.5 text-[10.5px] sm:text-[11px]">Zoom</button>
+        <button id="sun-toggle-btn" type="button" class="nav-pill border-amber-400/40 text-amber-200 px-2 py-0.5 text-[10.5px] sm:text-[11px]" title="Toggle between Contrasted Solar Mode and Classic Mode">☀️ <span class="hidden md:inline">Sun: Contrasted</span></button>
+        <button id="spin-boost-btn" type="button" class="hidden sm:inline-flex nav-pill px-2 py-0.5 text-[11px]">🌀 Spin</button>
+        <button id="globe-view-btn" type="button" class="nav-pill px-2 py-0.5 text-[10.5px] sm:text-[11px]" title="Return to 3D Globe">🌍 <span class="hidden sm:inline">Globe</span></button>
+      </div>
     </div>
 
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5">
-      <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
-        <button type="button" class="chip nav-pill py-1 px-2.5 text-[11px]" data-city="Kolkata" data-country="India" data-lat="22.5726" data-lon="88.3639">Kolkata</button>
-        <button type="button" class="chip nav-pill py-1 px-2.5 text-[11px]" data-city="Bengaluru" data-country="India" data-lat="12.9716" data-lon="77.5946">Bengaluru</button>
-        <button type="button" class="chip nav-pill py-1 px-2.5 text-[11px]" data-city="Mumbai" data-country="India" data-lat="19.0760" data-lon="72.8777">Mumbai</button>
-        <button type="button" class="chip nav-pill py-1 px-2.5 text-[11px]" data-city="New Delhi" data-country="India" data-lat="28.6139" data-lon="77.2090">New Delhi</button>
-        <button type="button" class="chip nav-pill py-1 px-2.5 text-[11px]" data-city="Kerala" data-country="India" data-lat="8.5241" data-lon="76.9366">Kerala</button>
-        <button type="button" class="chip nav-pill py-1 px-2.5 text-[11px]" data-city="Tokyo" data-country="Japan" data-lat="35.6762" data-lon="139.6503">Tokyo</button>
-        <button type="button" class="chip nav-pill py-1 px-2.5 text-[11px]" data-city="Reykjavik" data-country="Iceland" data-lat="64.1466" data-lon="-21.9426">Reykjavik</button>
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+      <div class="flex items-center gap-1 overflow-x-auto no-scrollbar">
+        <button type="button" class="chip nav-pill py-0.5 px-2 text-[10px] sm:text-[10.5px]" data-city="Kolkata" data-country="India" data-lat="22.5726" data-lon="88.3639">Kolkata</button>
+        <button type="button" class="chip nav-pill py-0.5 px-2 text-[10px] sm:text-[10.5px]" data-city="Bengaluru" data-country="India" data-lat="12.9716" data-lon="77.5946">Bengaluru</button>
+        <button type="button" class="chip nav-pill py-0.5 px-2 text-[10px] sm:text-[10.5px]" data-city="Mumbai" data-country="India" data-lat="19.0760" data-lon="72.8777">Mumbai</button>
+        <button type="button" class="chip nav-pill py-0.5 px-2 text-[10px] sm:text-[10.5px]" data-city="New Delhi" data-country="India" data-lat="28.6139" data-lon="77.2090">New Delhi</button>
+        <button type="button" class="chip nav-pill py-0.5 px-2 text-[10px] sm:text-[10.5px]" data-city="Kerala" data-country="India" data-lat="8.5241" data-lon="76.9366">Kerala</button>
+        <button type="button" class="chip nav-pill py-0.5 px-2 text-[10px] sm:text-[10.5px]" data-city="Tokyo" data-country="Japan" data-lat="35.6762" data-lon="139.6503">Tokyo</button>
+        <button type="button" class="chip nav-pill py-0.5 px-2 text-[10px] sm:text-[10.5px]" data-city="Reykjavik" data-country="Iceland" data-lat="64.1466" data-lon="-21.9426">Reykjavik</button>
       </div>
 
-      <div class="flex items-center gap-1.5 self-start sm:self-auto">
-        <span id="backend-status" class="glass-bar px-2 py-0.5 sm:px-2.5 sm:py-1 text-[10px] sm:text-[11px] font-mono text-amber-300">Backend: Checking...</span>
-        <span id="backend-latency" class="glass-bar px-2 py-0.5 sm:py-1 text-[10px] sm:text-[11px] font-mono text-slate-300">-- ms</span>
-        <span id="coord-hud" class="hidden sm:inline-block glass-bar px-2.5 py-1 text-[11px] font-mono text-sky-300">LAT 22.57°N · LON 88.36°E</span>
+      <div class="flex items-center gap-1 self-start sm:self-auto">
+        <span id="backend-status" class="glass-bar px-2 py-0.5 text-[9.5px] sm:text-[10px] leading-tight font-mono text-amber-300">Backend: Checking...</span>
+        <span id="backend-latency" class="glass-bar px-1.5 py-0.5 text-[9.5px] sm:text-[10px] leading-tight font-mono text-slate-300">-- ms</span>
+        <span id="coord-hud" class="hidden md:inline-block glass-bar px-2 py-0.5 text-[10px] leading-tight font-mono text-sky-300">LAT 22.57°N · LON 88.36°E</span>
       </div>
     </div>
   </header>
 
   <main id="dashboard-view">
-    <div class="max-w-6xl mx-auto space-y-4">
-      <div id="app-notice" class="hidden glass-card px-4 py-2.5 text-xs text-amber-200 border-amber-400/40"></div>
+    <div class="max-w-6xl mx-auto space-y-3 sm:space-y-4">
+      <div id="app-notice" class="hidden glass-card px-2.5 py-1 text-[10.5px] leading-tight text-amber-200 border-amber-400/40"></div>
 
-      <section class="glass-card p-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+      <section class="glass-card p-3.5 sm:p-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2.5 sm:gap-3">
         <div>
           <div class="flex flex-wrap items-center gap-2">
-            <h1 id="dash-city-title" class="text-2xl font-extrabold tracking-tight text-white">KOLKATA, INDIA</h1>
-            <span id="dash-weather-pill" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-500/20 border border-sky-400/40 text-sky-200">
+            <h1 id="dash-city-title" class="text-lg sm:text-2xl font-extrabold tracking-tight text-white">KOLKATA, INDIA</h1>
+            <span id="dash-weather-pill" class="px-2 py-0.5 sm:px-2.5 rounded-full text-[11px] sm:text-xs font-semibold bg-sky-500/20 border border-sky-400/40 text-sky-200">
               Clear &amp; Sunny
             </span>
           </div>
-          <p id="dash-city-coords" class="text-xs font-mono text-slate-400 mt-1">22.57°N, 88.36°E · WAQI + Open-Meteo</p>
-          <p id="dash-backend-route" class="text-[11px] font-mono text-sky-300/80 mt-0.5">API: http://127.0.0.1:8000 · Ready</p>
+          <p id="dash-city-coords" class="text-[11px] sm:text-xs font-mono text-slate-400 mt-1">22.57°N, 88.36°E · WAQI + Open-Meteo</p>
+          <p id="dash-backend-route" class="text-[10px] sm:text-[11px] font-mono text-sky-300/80 mt-0.5 truncate max-w-full">API: http://127.0.0.1:8000 · Ready</p>
         </div>
 
-        <div id="page-tabs" class="flex flex-wrap gap-1.5">
-          <button type="button" class="nav-pill active" data-page="overview">Main Overview &amp; Calendar</button>
-          <button type="button" class="nav-pill" data-page="rainfall">1. Rainfall &amp; Weather</button>
-          <button type="button" class="nav-pill" data-page="aqi">2. WAQI Air Quality</button>
+        <div id="page-tabs" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5 sm:flex-wrap">
+          <button type="button" class="nav-pill active" data-page="overview">Main Overview</button>
+          <button type="button" class="nav-pill" data-page="rainfall">1. Rainfall</button>
+          <button type="button" class="nav-pill" data-page="aqi">2. WAQI AQI</button>
           <button type="button" class="nav-pill" data-page="climate">3. Climate Horizon</button>
-          <button type="button" class="nav-pill" data-page="satellite">4. Satellite Radar</button>
+          <button type="button" class="nav-pill" data-page="satellite">4. Satellite</button>
           <button type="button" class="nav-pill" data-page="wrf">5. WRF Model</button>
         </div>
       </section>
 
-      <section id="page-overview" class="subpage space-y-4">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div class="glass-card p-5 flex flex-col justify-between">
-            <div class="flex items-start justify-between">
-              <div>
-                <p class="text-xs uppercase tracking-wider text-sky-300 font-bold">Today's Weather</p>
+      <section id="page-overview" class="subpage space-y-3 sm:space-y-4">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
+          <div class="glass-card p-4 sm:p-5 flex flex-col justify-between">
+            <div class="flex items-start justify-between gap-2">
+              <div class="flex-1 min-w-0">
+                <p class="text-[11px] sm:text-xs uppercase tracking-wider text-sky-300 font-bold">Today's Weather</p>
                 <div class="flex items-baseline gap-2 mt-1">
-                  <span id="ov-temp" class="text-4xl font-extrabold text-white">--°C</span>
-                  <span id="ov-cond" class="text-sm font-semibold text-sky-200">--</span>
+                  <span id="ov-temp" class="text-3xl sm:text-4xl font-extrabold text-white">--°C</span>
+                  <span id="ov-cond" class="text-xs sm:text-sm font-semibold text-sky-200 truncate">--</span>
                 </div>
-                <p id="ov-meta" class="text-xs text-slate-400 mt-1">Feels like --°C · Humidity --% · Wind -- km/h</p>
+                <p id="ov-meta" class="text-[11px] sm:text-xs text-slate-400 mt-1">Feels like --°C · Humidity --% · Wind -- km/h</p>
                 <div class="grid grid-cols-2 gap-2 mt-3 text-xs">
-                  <div class="px-2.5 py-2 rounded-xl bg-sky-500/10 border border-sky-400/25 flex items-center justify-between gap-2">
-                    <span class="text-slate-300 font-medium">💧 Humidity</span>
-                    <span id="ov-humidity" class="font-extrabold text-sky-300 font-mono">--%</span>
+                  <div class="px-2.5 py-2 rounded-xl bg-sky-500/10 border border-sky-400/25 flex items-center justify-between gap-1.5">
+                    <span class="text-slate-300 font-medium text-[11px]">💧 Humidity</span>
+                    <span id="ov-humidity" class="font-extrabold text-sky-300 font-mono text-[11px] sm:text-xs">--%</span>
                   </div>
-                  <div class="px-2.5 py-2 rounded-xl bg-indigo-500/10 border border-indigo-400/25 flex items-center justify-between gap-2">
-                    <span class="text-slate-300 font-medium">🌬️ Wind</span>
-                    <span id="ov-wind" class="font-extrabold text-indigo-300 font-mono">-- km/h</span>
+                  <div class="px-2.5 py-2 rounded-xl bg-indigo-500/10 border border-indigo-400/25 flex items-center justify-between gap-1.5">
+                    <span class="text-slate-300 font-medium text-[11px]">🌬️ Wind</span>
+                    <span id="ov-wind" class="font-extrabold text-indigo-300 font-mono text-[11px] sm:text-xs">-- km/h</span>
                   </div>
                 </div>
               </div>
-              <span id="ov-icon" class="text-4xl">🌤️</span>
+              <span id="ov-icon" class="text-3xl sm:text-4xl shrink-0">🌤️</span>
             </div>
 
-            <div class="grid grid-cols-2 gap-2.5 mt-4 pt-4 border-t border-white/10 text-xs">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-4 pt-4 border-t border-white/10 text-xs">
               <div class="p-3 rounded-xl bg-white/5 border border-white/10 flex flex-col justify-between">
                 <div>
                   <span class="text-slate-400 block">Live WAQI &amp; Range</span>
@@ -493,14 +646,14 @@
             </div>
           </div>
 
-          <div class="prediction-card p-5 lg:col-span-2">
+          <div class="prediction-card p-4 sm:p-5 lg:col-span-2">
             <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
               <div>
                 <div class="flex items-center gap-2">
-                  <p class="text-xs uppercase tracking-wider text-sky-300 font-bold">7-Day Temperature &amp; Rain Forecast</p>
+                  <p class="text-[11px] sm:text-xs uppercase tracking-wider text-sky-300 font-bold">7-Day Temperature &amp; Rain Forecast</p>
                   <span class="prediction-badge">🔮 Predictive Trend</span>
                 </div>
-                <p class="text-xs text-slate-300/80 mt-0.5">Smooth daily high/low thermal envelope &amp; precipitation outlook</p>
+                <p class="text-[11px] sm:text-xs text-slate-300/80 mt-0.5">Smooth daily high/low thermal envelope &amp; precipitation outlook</p>
               </div>
               <div class="flex items-center gap-3 text-[11px] font-semibold">
                 <span class="flex items-center gap-1.5 text-sky-300"><span class="w-2.5 h-0.5 bg-sky-400 inline-block rounded"></span>High °C</span>
@@ -508,27 +661,27 @@
               </div>
             </div>
 
-            <div class="w-full h-40 rounded-xl bg-slate-950/65 border border-sky-400/25 p-2.5 mb-3">
+            <div class="w-full h-36 sm:h-40 rounded-xl bg-slate-950/65 border border-sky-400/25 p-2 sm:p-2.5 mb-3">
               <svg id="trend-svg" viewBox="0 0 620 145" class="w-full h-full overflow-visible"></svg>
             </div>
 
-            <div id="seven-day-strip" class="grid grid-cols-2 sm:grid-cols-7 gap-2"></div>
+            <div id="seven-day-strip" class="grid grid-cols-3 sm:grid-cols-7 gap-2"></div>
           </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div class="glass-card p-5 lg:col-span-2">
-            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
+          <div class="glass-card p-4 sm:p-5 lg:col-span-2">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
               <div>
                 <div class="flex items-center gap-2">
-                  <p class="text-xs uppercase tracking-wider text-sky-300 font-bold">Weather Forecasting Calendar</p>
+                  <p class="text-[11px] sm:text-xs uppercase tracking-wider text-sky-300 font-bold">Weather Forecasting Calendar</p>
                   <span id="cal-horizon-badge" class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-sky-500/15 border border-sky-400/30 text-sky-200">2026–2100</span>
                 </div>
-                <p class="text-xs text-slate-400">Select any month, year (2026–2100), and day for city climate projection</p>
+                <p class="text-[11px] sm:text-xs text-slate-400">Select any month, year (2026–2100), and day for city climate projection</p>
               </div>
-              <div class="flex flex-wrap items-center gap-1.5">
+              <div class="flex flex-wrap items-center gap-1 sm:gap-1.5">
                 <button type="button" id="cal-prev-month" class="nav-pill px-2 py-1" title="Previous Month">‹</button>
-                <select id="cal-month" class="bg-slate-900/90 border border-sky-400/30 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none">
+                <select id="cal-month" class="bg-slate-900/90 border border-sky-400/30 rounded-lg px-2 py-1.5 text-xs text-white outline-none">
                   <option value="0">January</option><option value="1">February</option>
                   <option value="2">March</option><option value="3">April</option>
                   <option value="4">May</option><option value="5">June</option>
@@ -537,14 +690,14 @@
                   <option value="10">November</option><option value="11">December</option>
                 </select>
                 <button type="button" id="cal-next-month" class="nav-pill px-2 py-1" title="Next Month">›</button>
-                <button type="button" id="year-dec" class="nav-pill px-2.5 py-1">−</button>
-                <input id="cal-year" type="number" min="2026" max="2100" value="2026" class="w-20 text-center font-bold bg-slate-900/90 border border-sky-400/30 rounded-lg px-2 py-1.5 text-xs text-white outline-none" />
-                <button type="button" id="year-inc" class="nav-pill px-2.5 py-1">+</button>
-                <button type="button" id="cal-today-btn" class="nav-pill px-2.5 py-1 text-[11px] border-amber-400/40 text-amber-200">Today</button>
+                <button type="button" id="year-dec" class="nav-pill px-2 py-1">−</button>
+                <input id="cal-year" type="number" min="2026" max="2100" value="2026" class="w-16 sm:w-20 text-center font-bold bg-slate-900/90 border border-sky-400/30 rounded-lg px-1.5 py-1.5 text-xs text-white outline-none" />
+                <button type="button" id="year-inc" class="nav-pill px-2 py-1">+</button>
+                <button type="button" id="cal-today-btn" class="nav-pill px-2 py-1 text-[11px] border-amber-400/40 text-amber-200">Today</button>
               </div>
             </div>
 
-            <div class="flex flex-wrap items-center gap-1.5 mb-3">
+            <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 mb-2.5">
               <button type="button" data-cal-preset="today" class="cal-preset nav-pill py-1 px-2.5 text-[11px] active">Today</button>
               <button type="button" data-cal-preset="plus30" class="cal-preset nav-pill py-1 px-2.5 text-[11px]">+30 Days</button>
               <button type="button" data-cal-preset="monsoon" class="cal-preset nav-pill py-1 px-2.5 text-[11px]">Jul Monsoon</button>
@@ -552,114 +705,114 @@
               <button type="button" data-cal-preset="y2100" class="cal-preset nav-pill py-1 px-2.5 text-[11px]">2100</button>
             </div>
 
-            <div class="grid grid-cols-7 gap-1 text-center text-[11px] font-bold text-slate-400 mb-1.5">
+            <div class="grid grid-cols-7 gap-1 text-center text-[10px] sm:text-[11px] font-bold text-slate-400 mb-1.5">
               <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
             </div>
             <div id="cal-grid" class="cal-grid"></div>
           </div>
 
-          <div id="cal-forecast-card" class="prediction-card p-5 flex flex-col justify-between">
+          <div id="cal-forecast-card" class="prediction-card p-4 sm:p-5 flex flex-col justify-between">
             <div>
               <div class="flex items-center justify-between gap-2">
-                <p class="text-xs uppercase tracking-wider text-sky-300 font-bold">Selected Date Forecast</p>
+                <p class="text-[11px] sm:text-xs uppercase tracking-wider text-sky-300 font-bold">Selected Date Forecast</p>
                 <span class="prediction-badge">🔮 AI Projection</span>
               </div>
-              <p id="cal-selected-date" class="text-lg font-extrabold text-white mt-1.5">Click a date on the calendar</p>
+              <p id="cal-selected-date" class="text-base sm:text-lg font-extrabold text-white mt-1.5">Click a date on the calendar</p>
               <div id="cal-forecast-body" class="mt-3 text-xs text-slate-200 space-y-2">
                 <p class="text-slate-300/80">Choose any day from 2026 to 2100 to preview projected temperature, rainfall, and WAQI air quality.</p>
               </div>
             </div>
-            <span id="cal-source-tag" class="mt-4 inline-block self-start px-2.5 py-1 rounded-full text-[11px] font-mono bg-sky-500/20 border border-sky-400/40 text-sky-100">
+            <span id="cal-source-tag" class="mt-4 inline-block self-start px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-mono bg-sky-500/20 border border-sky-400/40 text-sky-100">
               Calendar Engine Ready
             </span>
           </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-          <button type="button" data-jump="rainfall" class="glass-card p-4 text-left hover:border-sky-400/60 transition">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3">
+          <button type="button" data-jump="rainfall" class="glass-card p-3.5 sm:p-4 text-left hover:border-sky-400/60 transition">
             <div class="text-lg">🌧️</div>
-            <div class="text-sm font-bold text-white mt-1">1. Rainfall &amp; Weather</div>
-            <div class="text-xs text-slate-400 mt-0.5">Live precipitation, wind &amp; AI verdict</div>
+            <div class="text-xs sm:text-sm font-bold text-white mt-1">1. Rainfall &amp; Weather</div>
+            <div class="text-[11px] sm:text-xs text-slate-400 mt-0.5">Live precipitation, wind &amp; AI verdict</div>
           </button>
-          <button type="button" data-jump="aqi" class="glass-card p-4 text-left hover:border-sky-400/60 transition">
+          <button type="button" data-jump="aqi" class="glass-card p-3.5 sm:p-4 text-left hover:border-sky-400/60 transition">
             <div class="text-lg">🌫️</div>
-            <div class="text-sm font-bold text-white mt-1">2. WAQI Air Quality</div>
-            <div class="text-xs text-slate-400 mt-0.5">Live WAQI AQI, forecast &amp; FX</div>
+            <div class="text-xs sm:text-sm font-bold text-white mt-1">2. WAQI Air Quality</div>
+            <div class="text-[11px] sm:text-xs text-slate-400 mt-0.5">Live WAQI AQI, forecast &amp; FX</div>
           </button>
-          <button type="button" data-jump="climate" class="glass-card p-4 text-left hover:border-sky-400/60 transition">
+          <button type="button" data-jump="climate" class="glass-card p-3.5 sm:p-4 text-left hover:border-sky-400/60 transition">
             <div class="text-lg">🌡️</div>
-            <div class="text-sm font-bold text-white mt-1">3. Climate Horizon</div>
-            <div class="text-xs text-slate-400 mt-0.5">Multi-year warming (2026–2100)</div>
+            <div class="text-xs sm:text-sm font-bold text-white mt-1">3. Climate Horizon</div>
+            <div class="text-[11px] sm:text-xs text-slate-400 mt-0.5">Multi-year warming (2026–2100)</div>
           </button>
-          <button type="button" data-jump="satellite" class="glass-card p-4 text-left hover:border-sky-400/60 transition">
+          <button type="button" data-jump="satellite" class="glass-card p-3.5 sm:p-4 text-left hover:border-sky-400/60 transition">
             <div class="text-lg">🛰️</div>
-            <div class="text-sm font-bold text-white mt-1">4. Satellite Radar</div>
-            <div class="text-xs text-slate-400 mt-0.5">Flood, seismic &amp; fire risk radar</div>
+            <div class="text-xs sm:text-sm font-bold text-white mt-1">4. Satellite Radar</div>
+            <div class="text-[11px] sm:text-xs text-slate-400 mt-0.5">Flood, seismic &amp; fire risk radar</div>
           </button>
-          <button type="button" data-jump="wrf" class="glass-card p-4 text-left hover:border-sky-400/60 transition">
+          <button type="button" data-jump="wrf" class="glass-card p-3.5 sm:p-4 text-left hover:border-sky-400/60 transition col-span-2 sm:col-span-1">
             <div class="text-lg">🌬️</div>
-            <div class="text-sm font-bold text-white mt-1">5. WRF Model</div>
-            <div class="text-xs text-slate-400 mt-0.5">Wind gusts, pressure &amp; turbulence</div>
+            <div class="text-xs sm:text-sm font-bold text-white mt-1">5. WRF Model</div>
+            <div class="text-[11px] sm:text-xs text-slate-400 mt-0.5">Wind gusts, pressure &amp; turbulence</div>
           </button>
         </div>
       </section>
 
       <section id="page-rainfall" class="subpage hidden space-y-4">
-        <div class="glass-card p-6">
+        <div class="glass-card p-4 sm:p-6">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <h2 class="text-xl font-extrabold text-white">1. Rainfall &amp; Live Meteorological Telemetry</h2>
+              <h2 class="text-lg sm:text-xl font-extrabold text-white">1. Rainfall &amp; Live Meteorological Telemetry</h2>
               <p class="text-xs text-slate-400 mt-1">Real-time surface observations paired with ML rainfall prediction</p>
             </div>
             <span class="prediction-badge">🔮 ML Rainfall Model</span>
           </div>
-          <div id="sub-rainfall-content" class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 text-sm"></div>
+          <div id="sub-rainfall-content" class="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 mt-4 text-sm"></div>
           <div id="sub-rainfall-hourly" class="mt-4 pt-4 border-t border-white/10"></div>
         </div>
       </section>
 
       <section id="page-aqi" class="subpage hidden space-y-4">
-        <div class="glass-card p-6">
+        <div class="glass-card p-4 sm:p-6">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <h2 class="text-xl font-extrabold text-white">2. WAQI Air Quality &amp; Atmospheric Spectrum</h2>
+              <h2 class="text-lg sm:text-xl font-extrabold text-white">2. WAQI Air Quality &amp; Atmospheric Spectrum</h2>
               <p class="text-xs text-slate-400 mt-1">World Air Quality Index (WAQI) status, CPCB particulate telemetry, and near-term forecast</p>
             </div>
           </div>
-          <div id="sub-aqi-content" class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 text-sm"></div>
+          <div id="sub-aqi-content" class="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 mt-4 text-sm"></div>
         </div>
       </section>
 
       <section id="page-climate" class="subpage hidden space-y-4">
-        <div class="glass-card p-6 space-y-5">
+        <div class="glass-card p-4 sm:p-6 space-y-4 sm:space-y-5">
           <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 class="text-xl font-extrabold text-white">3. Multi-Year Climate Projection (<span id="climate-year-heading">2050</span>)</h2>
+              <h2 class="text-lg sm:text-xl font-extrabold text-white">3. Multi-Year Climate Projection (<span id="climate-year-heading">2050</span>)</h2>
               <p class="text-xs text-slate-400 mt-1">Interactive multi-decade warming curve, thermal envelope, and adaptation outlook (2026–2100)</p>
             </div>
-            <div class="flex flex-wrap items-center gap-2">
+            <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
               <div class="flex items-center gap-1">
                 <button type="button" data-climate-year="2030" class="climate-preset nav-pill py-1 px-2 text-[11px]">2030</button>
                 <button type="button" data-climate-year="2050" class="climate-preset nav-pill py-1 px-2 text-[11px] active">2050</button>
                 <button type="button" data-climate-year="2075" class="climate-preset nav-pill py-1 px-2 text-[11px]">2075</button>
                 <button type="button" data-climate-year="2100" class="climate-preset nav-pill py-1 px-2 text-[11px]">2100</button>
               </div>
-              <label for="climate-target-year" class="text-xs font-semibold text-sky-200">Target Year:</label>
-              <button type="button" id="climate-year-dec" class="nav-pill px-2.5 py-1">−</button>
+              <label for="climate-target-year" class="text-xs font-semibold text-sky-200">Year:</label>
+              <button type="button" id="climate-year-dec" class="nav-pill px-2 py-1">−</button>
               <input
                 id="climate-target-year"
                 type="number"
                 min="2026"
                 max="2100"
                 value="2050"
-                class="w-20 text-center font-bold bg-slate-900/90 border border-sky-400/40 rounded-lg px-2 py-1.5 text-xs text-white outline-none focus:border-sky-300"
+                class="w-16 sm:w-20 text-center font-bold bg-slate-900/90 border border-sky-400/40 rounded-lg px-2 py-1.5 text-xs text-white outline-none focus:border-sky-300"
               />
-              <button type="button" id="climate-year-inc" class="nav-pill px-2.5 py-1">+</button>
+              <button type="button" id="climate-year-inc" class="nav-pill px-2 py-1">+</button>
               <span class="prediction-badge">🔮 Climate Model</span>
             </div>
           </div>
 
-          <div class="flex items-center gap-3 bg-slate-950/60 border border-sky-400/25 rounded-xl px-4 py-2.5">
+          <div class="flex items-center gap-3 bg-slate-950/60 border border-sky-400/25 rounded-xl px-3.5 py-2.5">
             <span class="text-[11px] font-mono text-slate-400">2026</span>
             <input
               id="climate-year-slider"
@@ -672,20 +825,20 @@
             <span class="text-[11px] font-mono text-amber-300 font-bold">2100</span>
           </div>
 
-          <div id="sub-climate-content" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm"></div>
+          <div id="sub-climate-content" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 text-sm"></div>
 
-          <div class="prediction-card p-4">
+          <div class="prediction-card p-3.5 sm:p-4">
             <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
               <div>
                 <p class="text-xs uppercase tracking-wider text-sky-300 font-bold">Decadal Warming Trajectory &amp; Uncertainty Band</p>
-                <p class="text-[11px] text-slate-300/80">Click any decade node or drag the slider above to inspect projected warming</p>
+                <p class="text-[11px] text-slate-300/80">Tap any decade node or drag the slider above to inspect projected warming</p>
               </div>
               <div class="flex items-center gap-3 text-[11px] font-semibold">
                 <span class="flex items-center gap-1.5 text-amber-300"><span class="w-2.5 h-0.5 bg-amber-400 inline-block rounded"></span>Projected Mean °C</span>
                 <span class="flex items-center gap-1.5 text-sky-300"><span class="w-2.5 h-2.5 bg-sky-400/25 border border-sky-400/50 inline-block rounded-sm"></span>Envelope</span>
               </div>
             </div>
-            <div class="w-full h-44 rounded-xl bg-slate-950/70 border border-sky-400/25 p-2.5">
+            <div class="w-full h-40 sm:h-44 rounded-xl bg-slate-950/70 border border-sky-400/25 p-2 sm:p-2.5">
               <svg id="climate-trajectory-svg" viewBox="0 0 660 155" class="w-full h-full overflow-visible"></svg>
             </div>
           </div>
@@ -695,32 +848,32 @@
       </section>
 
       <section id="page-satellite" class="subpage hidden space-y-4">
-        <div class="glass-card p-6">
+        <div class="glass-card p-4 sm:p-6">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <h2 class="text-xl font-extrabold text-white">4. Satellite Disaster &amp; Hazard Radar</h2>
+              <h2 class="text-lg sm:text-xl font-extrabold text-white">4. Satellite Disaster &amp; Hazard Radar</h2>
               <p class="text-xs text-slate-400 mt-1">Live orbital satellite imagery, predictive flood risk, thermal/fire index, and seismic monitoring</p>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex flex-wrap items-center gap-2">
               <a id="sat-external-link" href="https://maps.google.com/?q=22.5726,88.3639&t=k" target="_blank" rel="noopener noreferrer" class="nav-pill text-xs">🛰️ Open Full Satellite Map ↗</a>
               <span class="prediction-badge">🔮 Hazard Risk Forecast</span>
             </div>
           </div>
-          <div id="sub-satellite-content" class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 text-sm"></div>
+          <div id="sub-satellite-content" class="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 mt-4 text-sm"></div>
           <div id="sat-imagery-wrapper" class="mt-4 rounded-2xl overflow-hidden border border-sky-400/30 bg-slate-950/80"></div>
         </div>
       </section>
 
       <section id="page-wrf" class="subpage hidden space-y-4">
-        <div class="glass-card p-6 space-y-4">
+        <div class="glass-card p-4 sm:p-6 space-y-4">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <h2 class="text-xl font-extrabold text-white">5. WRF Numerical Weather &amp; Turbulence Simulation</h2>
+              <h2 class="text-lg sm:text-xl font-extrabold text-white">5. WRF Numerical Weather &amp; Turbulence Simulation</h2>
               <p class="text-xs text-slate-400 mt-1">Boundary-layer wind gusts, surface pressure, laminar vs. turbulent flow, and 12-hour progression</p>
             </div>
             <span class="prediction-badge">🔮 NWP Simulation</span>
           </div>
-          <div id="sub-wrf-content" class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm"></div>
+          <div id="sub-wrf-content" class="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 text-sm"></div>
           <div id="sub-wrf-progression" class="pt-4 border-t border-white/10"></div>
         </div>
       </section>
@@ -772,10 +925,10 @@
         if (statusEl) {
           if (connected) {
             statusEl.textContent = `Backend: Connected (${hostLabel})`;
-            statusEl.className = 'glass-bar px-2 py-0.5 sm:px-2.5 sm:py-1 text-[10px] sm:text-[11px] font-mono text-emerald-300';
+            statusEl.className = 'glass-bar px-2 py-0.5 text-[9.5px] sm:text-[10px] leading-tight font-mono text-emerald-300';
           } else {
             statusEl.textContent = 'Backend: Offline (Open-Meteo Fallback)';
-            statusEl.className = 'glass-bar px-2 py-0.5 sm:px-2.5 sm:py-1 text-[10px] sm:text-[11px] font-mono text-amber-300';
+            statusEl.className = 'glass-bar px-2 py-0.5 text-[9.5px] sm:text-[10px] leading-tight font-mono text-amber-300';
           }
         }
         if (latencyEl) {
@@ -801,8 +954,8 @@
         const dashEl = document.getElementById('dashboard-view');
         const isScrolled = !!(dashEl && dashEl.scrollTop > 28);
         el.className = isError
-          ? 'glass-card px-3 py-1.5 text-[11px] leading-snug text-rose-200 border-rose-400/50 bg-rose-950/40'
-          : 'glass-card px-3 py-1.5 text-[11px] leading-snug text-sky-200 border-sky-400/40 bg-sky-950/40';
+          ? 'glass-card px-2.5 py-1 text-[10.5px] leading-tight text-rose-200 border-rose-400/50 bg-rose-950/40'
+          : 'glass-card px-2.5 py-1 text-[10.5px] leading-tight text-sky-200 border-sky-400/40 bg-sky-950/40';
         if (isScrolled) {
           el.classList.add('scrolled-compact');
         }
@@ -864,6 +1017,9 @@
       let solarMode = 'contrasted';
       let isDraggingGlobe = false;
       let prevPointer = { x: 0, y: 0 };
+      const activePointers = new Map();
+      let initialPinchDist = null;
+      let initialPinchCamDist = null;
       let autoRotate = true;
       let spinBoostVelocity = 0;
 
@@ -1256,27 +1412,65 @@
 
       function attachPointerControls(el) {
         el.addEventListener('pointerdown', (e) => {
-          isDraggingGlobe = true;
+          activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
           autoRotate = false;
           flight.active = false;
-          prevPointer = { x: e.clientX, y: e.clientY };
+
+          if (activePointers.size === 1) {
+            isDraggingGlobe = true;
+            prevPointer = { x: e.clientX, y: e.clientY };
+          } else if (activePointers.size === 2 && camera) {
+            isDraggingGlobe = false;
+            const pts = Array.from(activePointers.values());
+            initialPinchDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+            initialPinchCamDist = camera.position.length();
+          }
         });
 
         window.addEventListener('pointermove', (e) => {
+          if (activePointers.has(e.pointerId)) {
+            activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+          }
+
+          if (activePointers.size === 2 && initialPinchDist && initialPinchCamDist && camera) {
+            const pts = Array.from(activePointers.values());
+            const curDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+            if (curDist > 10) {
+              const scale = initialPinchDist / curDist;
+              const nextDist = THREE.MathUtils.clamp(initialPinchCamDist * scale, 2.75, 13.5);
+              camera.position.setLength(nextDist);
+            }
+            return;
+          }
+
           if (!isDraggingGlobe) return;
           const dx = e.clientX - prevPointer.x;
           const dy = e.clientY - prevPointer.y;
           prevPointer = { x: e.clientX, y: e.clientY };
 
           if (earthGroup) {
-            earthGroup.rotation.y += dx * 0.006;
-            earthGroup.rotation.x = THREE.MathUtils.clamp(earthGroup.rotation.x + dy * 0.005, -1.2, 1.2);
+            earthGroup.rotation.y += dx * 0.0065;
+            earthGroup.rotation.x = THREE.MathUtils.clamp(earthGroup.rotation.x + dy * 0.0055, -1.2, 1.2);
           }
         });
 
-        window.addEventListener('pointerup', () => {
-          isDraggingGlobe = false;
-        });
+        const releasePointer = (e) => {
+          activePointers.delete(e.pointerId);
+          if (activePointers.size < 2) {
+            initialPinchDist = null;
+            initialPinchCamDist = null;
+          }
+          if (activePointers.size === 1) {
+            const remaining = Array.from(activePointers.values())[0];
+            prevPointer = { x: remaining.x, y: remaining.y };
+            isDraggingGlobe = true;
+          } else {
+            isDraggingGlobe = false;
+          }
+        };
+
+        window.addEventListener('pointerup', releasePointer);
+        window.addEventListener('pointercancel', releasePointer);
 
         el.addEventListener('wheel', (e) => {
           e.preventDefault();
@@ -1425,8 +1619,10 @@
         }
 
         const proj = worldPos.project(camera);
-        labelEl.style.left = `${(proj.x * 0.5 + 0.5) * window.innerWidth}px`;
-        labelEl.style.top = `${(-proj.y * 0.5 + 0.5) * window.innerHeight}px`;
+        const rawX = (proj.x * 0.5 + 0.5) * window.innerWidth;
+        const rawY = (-proj.y * 0.5 + 0.5) * window.innerHeight;
+        labelEl.style.left = `${Math.max(85, Math.min(window.innerWidth - 85, rawX))}px`;
+        labelEl.style.top = `${Math.max(125, Math.min(window.innerHeight - 60, rawY))}px`;
         labelEl.style.display = 'flex';
       }
 
@@ -1438,7 +1634,7 @@
         ctx.clearRect(0, 0, w, h);
 
         const cx = w * 0.5, cy = h * 0.52;
-        const r = w < h ? w * 0.28 : Math.min(w, h) * 0.23;
+        const r = w < h ? w * 0.30 : Math.min(w, h) * 0.23;
         const rot = time * 0.0003 + spinBoostVelocity * 8;
 
         const grad = ctx.createRadialGradient(cx - r * 0.35, cy - r * 0.35, r * 0.1, cx, cy, r);
@@ -1497,30 +1693,31 @@
           }
         }
 
-        rainDrops = Array.from({ length: 220 }, () => ({
+        const isMobile = w < 640;
+        rainDrops = Array.from({ length: isMobile ? 130 : 220 }, () => ({
           x: Math.random() * w, y: Math.random() * h,
           len: 12 + Math.random() * 20, speed: 11 + Math.random() * 13,
           alpha: 0.25 + Math.random() * 0.4
         }));
-        snowFlakes = Array.from({ length: 160 }, () => ({
+        snowFlakes = Array.from({ length: isMobile ? 100 : 160 }, () => ({
           x: Math.random() * w, y: Math.random() * h,
           r: 1.5 + Math.random() * 3.5, speed: 0.8 + Math.random() * 2,
           drift: Math.random() * Math.PI * 2, alpha: 0.5 + Math.random() * 0.45
         }));
-        motes = Array.from({ length: 90 }, () => ({
+        motes = Array.from({ length: isMobile ? 55 : 90 }, () => ({
           x: Math.random() * w, y: Math.random() * h,
           r: 1.5 + Math.random() * 5, vx: (Math.random() - 0.5) * 0.5,
           vy: -0.2 - Math.random() * 0.5, alpha: 0.25 + Math.random() * 0.55,
           isSoot: Math.random() > 0.42
         }));
-        cloudPuffs = Array.from({ length: 16 }, () => ({
+        cloudPuffs = Array.from({ length: isMobile ? 10 : 16 }, () => ({
           x: Math.random() * w, y: Math.random() * h,
-          r: 120 + Math.random() * 200, speed: 0.18 + Math.random() * 0.35
+          r: (isMobile ? 90 : 120) + Math.random() * 180, speed: 0.18 + Math.random() * 0.35
         }));
-        smokePlumes = Array.from({ length: 34 }, (_, idx) => ({
+        smokePlumes = Array.from({ length: isMobile ? 22 : 34 }, (_, idx) => ({
           x: Math.random() * w,
           y: h * (0.18 + Math.random() * 0.85),
-          r: 110 + Math.random() * 210,
+          r: (isMobile ? 85 : 110) + Math.random() * 190,
           vx: 0.28 + Math.random() * 0.55,
           vy: -0.14 - Math.random() * 0.28,
           phase: Math.random() * Math.PI * 2,
@@ -1604,15 +1801,14 @@
       function computeAqiEffectProfile(aqiVal, backendTrigger) {
         const trig = String(backendTrigger || '').toUpperCase();
         if (aqiVal == null || Number.isNaN(Number(aqiVal))) {
-          if (trig.includes('HEAVY_SMOG')) return { fx: 'aqi', intensity: 0.85 };
-          if (trig.includes('LIGHT_HAZE')) return { fx: 'fog', intensity: 0.42 };
+          if (trig.includes('HEAVY_SMOG') || trig.includes('LIGHT_HAZE')) return { fx: 'aqi', intensity: 0.72 };
           return { fx: 'cloudy', intensity: 0 };
         }
         const v = Number(aqiVal);
         if (v <= 50) return { fx: 'cloudy', intensity: 0 };
-        if (v <= 100) return { fx: 'fog', intensity: 0.28 };
-        if (v <= 150) return { fx: 'fog', intensity: 0.52 };
-        return { fx: 'aqi', intensity: Math.min(1, Math.max(0.65, (v - 100) / 220)) };
+        if (v <= 100) return { fx: 'aqi', intensity: 0.58 };
+        if (v <= 150) return { fx: 'aqi', intensity: 0.78 };
+        return { fx: 'aqi', intensity: Math.min(1, Math.max(0.82, (v - 100) / 200)) };
       }
 
       function syncEffectForCurrentPage() {
@@ -1808,12 +2004,9 @@
         }
 
         if (activeFx === 'aqi') {
-          const intensity = Math.max(0.6, Math.min(1.0, aqiHazeIntensity));
-          const aqiVal = liveWaqiScore != null && !Number.isNaN(Number(liveWaqiScore)) ? Number(liveWaqiScore) : 185;
+          const intensity = Math.max(0.55, Math.min(1.0, aqiHazeIntensity));
+          const aqiVal = liveWaqiScore != null && !Number.isNaN(Number(liveWaqiScore)) ? Number(liveWaqiScore) : 135;
 
-          // Interpolate smoothly along the WAQI color bar stops:
-          // 0 Good (#14b8a6) -> 75 Moderate (#eab308) -> 125 Sensitive (#f97316)
-          // -> 175 Unhealthy (#ef4444) -> 250 Very Unhealthy (#a855f7) -> 325+ Hazardous (#ec4899)
           const barStops = [
             { at: 0,   rgb: [20, 184, 166] },
             { at: 75,  rgb: [234, 179, 8] },
@@ -1841,10 +2034,10 @@
 
           const toHex = (n) => Math.max(0, Math.min(255, n)).toString(16).padStart(2, '0');
           const scaleChannel = (c, mult) => Math.round(c * mult);
-          const topHex = `#${toHex(scaleChannel(r, 0.16))}${toHex(scaleChannel(grn, 0.16))}${toHex(scaleChannel(b, 0.16))}`;
-          const midHex = `#${toHex(scaleChannel(r, 0.34))}${toHex(scaleChannel(grn, 0.34))}${toHex(scaleChannel(b, 0.34))}`;
-          const lowHex = `#${toHex(scaleChannel(r, 0.56))}${toHex(scaleChannel(grn, 0.56))}${toHex(scaleChannel(b, 0.56))}`;
-          const baseHex = `#${toHex(scaleChannel(r, 0.11))}${toHex(scaleChannel(grn, 0.11))}${toHex(scaleChannel(b, 0.11))}`;
+          const topHex = `#${toHex(scaleChannel(r, 0.24))}${toHex(scaleChannel(grn, 0.24))}${toHex(scaleChannel(b, 0.24))}`;
+          const midHex = `#${toHex(scaleChannel(r, 0.48))}${toHex(scaleChannel(grn, 0.48))}${toHex(scaleChannel(b, 0.48))}`;
+          const lowHex = `#${toHex(scaleChannel(r, 0.72))}${toHex(scaleChannel(grn, 0.72))}${toHex(scaleChannel(b, 0.72))}`;
+          const baseHex = `#${toHex(scaleChannel(r, 0.16))}${toHex(scaleChannel(grn, 0.16))}${toHex(scaleChannel(b, 0.16))}`;
 
           const plumeRgb = `${r}, ${grn}, ${b}`;
           const moteR = Math.min(255, Math.round(r + (255 - r) * 0.65));
@@ -1860,6 +2053,12 @@
           bgCtx.fillStyle = g;
           bgCtx.fillRect(0, 0, w, h);
 
+          const glowRad = bgCtx.createRadialGradient(w * 0.5, h * 0.52, 20, w * 0.5, h * 0.52, Math.max(w, h) * 0.65);
+          glowRad.addColorStop(0, `rgba(${plumeRgb}, ${0.24 * intensity})`);
+          glowRad.addColorStop(1, 'rgba(15, 23, 42, 0)');
+          bgCtx.fillStyle = glowRad;
+          bgCtx.fillRect(0, 0, w, h);
+
           smokePlumes.forEach((p) => {
             p.x += p.vx * (p.layer === 1 ? 1.25 : 0.75);
             p.y += p.vy + Math.sin(t * 0.55 + p.phase) * 0.22;
@@ -1869,7 +2068,7 @@
             const targetCtx = p.layer === 1 ? fgCtx : bgCtx;
             const rad = p.r * (1 + Math.sin(t * 0.5 + p.phase) * 0.08);
             const grad = targetCtx.createRadialGradient(p.x, p.y, rad * 0.08, p.x, p.y, rad);
-            grad.addColorStop(0, `rgba(${plumeRgb}, ${0.18 * intensity})`);
+            grad.addColorStop(0, `rgba(${plumeRgb}, ${0.22 * intensity})`);
             grad.addColorStop(1, 'rgba(15, 23, 42, 0)');
             targetCtx.fillStyle = grad;
             targetCtx.beginPath();
@@ -2493,9 +2692,9 @@
           const dayRainPct = Number(rainArr[i] ?? 0);
 
           strip.innerHTML += `
-            <div class="p-2.5 rounded-xl bg-sky-500/10 border border-sky-400/25 hover:border-sky-400/55 transition text-center">
+            <div class="p-2 sm:p-2.5 rounded-xl bg-sky-500/10 border border-sky-400/25 hover:border-sky-400/55 transition text-center">
               <div class="text-[11px] font-bold text-slate-300">${label}</div>
-              <div class="text-lg my-1">${meta.icon}</div>
+              <div class="text-base sm:text-lg my-1">${meta.icon}</div>
               <div class="text-xs font-extrabold text-white">${validMax[i]}° <span class="text-slate-400 font-semibold">/ ${validMin[i]}°</span></div>
               <div class="text-[10px] text-sky-300 mt-0.5">💧 ${dayRainPct}%</div>
             </div>
@@ -2553,17 +2752,17 @@
               <span class="text-xs text-sky-200 font-semibold">AI Rainfall Prediction</span>
               <span class="prediction-badge">🔮 Forecast</span>
             </div>
-            <div class="text-xl font-extrabold text-white mt-2">${wMeta.icon} ${t.rainVerdict}</div>
+            <div class="text-lg sm:text-xl font-extrabold text-white mt-2">${wMeta.icon} ${t.rainVerdict}</div>
             <div class="text-xs text-sky-300 mt-1">Chance Range: ${alignedRainRange}</div>
           </div>
           <div class="p-4 rounded-xl bg-white/5 border border-white/10">
             <div class="text-xs text-slate-400">Temperature &amp; Feels Like</div>
-            <div class="text-xl font-extrabold text-sky-300 mt-2">${t.temp}°C (Feels ${t.feelsLike}°C)</div>
+            <div class="text-lg sm:text-xl font-extrabold text-sky-300 mt-2">${t.temp}°C (Feels ${t.feelsLike}°C)</div>
             <div class="text-xs text-slate-400 mt-1">Surface Pressure: ${t.pressure} hPa</div>
           </div>
           <div class="p-4 rounded-xl bg-white/5 border border-white/10">
             <div class="text-xs text-slate-400">Humidity &amp; Surface Wind</div>
-            <div class="text-xl font-extrabold text-indigo-300 mt-2">${t.humidity}% · ${t.windSpeed} km/h</div>
+            <div class="text-lg sm:text-xl font-extrabold text-indigo-300 mt-2">${t.humidity}% · ${t.windSpeed} km/h</div>
             <div class="text-xs text-slate-400 mt-1">Condition: ${t.weatherConditionLabel || wMeta.label}</div>
           </div>
         `;
@@ -2593,9 +2792,9 @@
                 <p class="text-xs uppercase tracking-wider text-sky-300 font-bold">Hourly Weather &amp; Precipitation Slots</p>
                 <p class="text-[11px] text-slate-400">12-hour AM/PM &amp; 24-hour local slots with live rain probability for ${t.city.name}</p>
               </div>
-              <span class="text-[11px] font-mono text-sky-300">AM/PM · 24H WINDOWS</span>
+              <span class="text-[10px] sm:text-[11px] font-mono text-sky-300">AM/PM · 24H WINDOWS</span>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-2.5">
+            <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2.5">
               ${slots.map((slot) => {
                 const pct = Math.max(0, Math.min(100, Math.round(Number(slot.prob ?? 0))));
                 const barColor = pct >= 70 ? '#818cf8' : pct >= 45 ? '#38bdf8' : '#2dd4bf';
@@ -2603,15 +2802,15 @@
                   <div class="p-3 rounded-xl bg-slate-950/65 border border-sky-400/25 flex flex-col justify-between gap-2">
                     <div class="flex items-start justify-between gap-1">
                       <div>
-                        <div class="text-xs font-extrabold text-sky-200 leading-tight">${slot.primary12h}</div>
+                        <div class="text-[11px] sm:text-xs font-extrabold text-sky-200 leading-tight">${slot.primary12h}</div>
                         <div class="font-mono text-[10px] text-slate-400 mt-0.5">${slot.secondary24h}</div>
                       </div>
-                      <span class="text-lg leading-none" title="${slot.condition}">${slot.icon}</span>
+                      <span class="text-base sm:text-lg leading-none" title="${slot.condition}">${slot.icon}</span>
                     </div>
                     <div>
                       <div class="text-xs font-bold text-white">${slot.condition}</div>
                       <div class="flex items-center justify-between text-[11px] mt-1">
-                        <span class="text-slate-400">Rain chance</span>
+                        <span class="text-slate-400">Rain</span>
                         <span class="font-extrabold text-sky-300">${pct}%</span>
                       </div>
                     </div>
@@ -2654,8 +2853,8 @@
 
         const aqiSpectrumGuide = `
           <div class="mt-3 pt-2.5 border-t border-white/10">
-            <div class="flex items-center justify-between text-[10px] font-mono text-slate-300 mb-1.5">
-              <span>WAQI Spectrum &amp; Warning Levels</span>
+            <div class="flex flex-wrap items-center justify-between gap-1 text-[10px] font-mono text-slate-300 mb-1.5">
+              <span>WAQI Spectrum</span>
               <span class="font-bold" style="color:${aqiWarning.text}">${aqiWarning.title}</span>
             </div>
             <div class="relative h-3 w-full rounded-full overflow-visible shadow-inner"
@@ -2675,16 +2874,191 @@
           </div>
         `;
 
+        const aqiTierKey = !hasValidAqi
+          ? 'unavailable'
+          : aqiNum <= 50
+            ? 'good'
+            : aqiNum <= 100
+              ? 'moderate'
+              : aqiNum <= 150
+                ? 'sensitive'
+                : aqiNum <= 200
+                  ? 'unhealthy'
+                  : aqiNum <= 300
+                    ? 'very_unhealthy'
+                    : 'hazardous';
+
+        const kurtaPalette = {
+          good:          { top: '#2dd4bf', bot: '#0d9488', stroke: '#134e4a' },
+          moderate:      { top: '#fde047', bot: '#ca8a04', stroke: '#713f12' },
+          sensitive:     { top: '#fb923c', bot: '#ea580c', stroke: '#7c2d12' },
+          unhealthy:     { top: '#f87171', bot: '#dc2626', stroke: '#7f1d1d' },
+          very_unhealthy:{ top: '#c084fc', bot: '#9333ea', stroke: '#581c87' },
+          hazardous:     { top: '#f472b6', bot: '#db2777', stroke: '#831843' },
+          unavailable:   { top: '#94a3b8', bot: '#475569', stroke: '#1e293b' }
+        }[aqiTierKey];
+
+        const characterCaption = aqiTierKey === 'good'
+          ? 'Good · Fresh Air'
+          : aqiTierKey === 'moderate'
+            ? 'Moderate · Mild Haze'
+            : aqiTierKey === 'sensitive'
+              ? 'Sensitive · Throat Irritation'
+              : aqiTierKey === 'unhealthy'
+                ? 'Unhealthy · Wear Mask'
+                : aqiTierKey === 'very_unhealthy'
+                  ? 'Very Unhealthy · Valve Respirator'
+                  : aqiTierKey === 'hazardous'
+                    ? 'Hazardous · Heavy Smog Alert'
+                    : 'Awaiting Sensor Data';
+
+        const isAlertPose = ['sensitive', 'unhealthy', 'very_unhealthy', 'hazardous'].includes(aqiTierKey);
+        const animClass = isAlertPose ? 'aqi-char-anim-alert' : 'aqi-char-anim-calm';
+
+        const eyesAndBrowsSvg = aqiTierKey === 'hazardous'
+          ? `
+            <path d="M56 64 L76 68 L56 72" fill="none" stroke="#1e1b18" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M122 64 L102 68 L122 72" fill="none" stroke="#1e1b18" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M55 56 L77 61" fill="none" stroke="#3b2314" stroke-width="4.2" stroke-linecap="round" />
+            <path d="M123 56 L101 61" fill="none" stroke="#3b2314" stroke-width="4.2" stroke-linecap="round" />
+          `
+          : aqiTierKey === 'good'
+            ? `
+              <ellipse cx="66" cy="67" rx="11.5" ry="13.5" fill="#ffffff" stroke="#1e1b18" stroke-width="2.5" />
+              <circle cx="67.5" cy="68.5" r="6.8" fill="#3a2010" />
+              <circle cx="67.5" cy="68.5" r="3.4" fill="#120a05" />
+              <circle cx="64.5" cy="65" r="2.4" fill="#ffffff" />
+              <ellipse cx="109" cy="66" rx="12.5" ry="14.5" fill="#ffffff" stroke="#1e1b18" stroke-width="2.5" />
+              <circle cx="108" cy="67.5" r="7.2" fill="#3a2010" />
+              <circle cx="108" cy="67.5" r="3.6" fill="#120a05" />
+              <circle cx="104.8" cy="64" r="2.6" fill="#ffffff" />
+              <path d="M55 51 Q66 47 76 50" fill="none" stroke="#3b2314" stroke-width="4.6" stroke-linecap="round" />
+              <path d="M99 49 Q110 46 121 50" fill="none" stroke="#3b2314" stroke-width="4.6" stroke-linecap="round" />
+            `
+            : `
+              <ellipse cx="66" cy="68" rx="11.5" ry="13.5" fill="#ffffff" stroke="#1e1b18" stroke-width="2.5" />
+              <circle cx="67.5" cy="67" r="6.8" fill="#3a2010" />
+              <circle cx="67.5" cy="67" r="3.4" fill="#120a05" />
+              <circle cx="64.5" cy="63.5" r="2.4" fill="#ffffff" />
+              <ellipse cx="109" cy="67" rx="12.5" ry="14.5" fill="#ffffff" stroke="#1e1b18" stroke-width="2.5" />
+              <circle cx="108" cy="66" r="7.2" fill="#3a2010" />
+              <circle cx="108" cy="66" r="3.6" fill="#120a05" />
+              <circle cx="104.8" cy="62.5" r="2.6" fill="#ffffff" />
+              <path d="M54 55 Q65 51 76 48" fill="none" stroke="#3b2314" stroke-width="4.6" stroke-linecap="round" />
+              <path d="M100 48 Q111 51 122 55" fill="none" stroke="#3b2314" stroke-width="4.6" stroke-linecap="round" />
+            `;
+
+        const mouthOrMaskSvg = aqiTierKey === 'good'
+          ? `
+            <path d="M84 68 L81 79 Q85 82 91 79" fill="none" stroke="#7c3f1d" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M72 87 Q88 92 104 86 Q100 103 86 103 Q74 102 72 87 Z" fill="#9f1239" stroke="#1e1b18" stroke-width="2.3" stroke-linejoin="round" />
+            <path d="M75 88 Q88 92 101 87 Q97 92 88 92 Q79 92 75 88 Z" fill="#ffffff" />
+            <path d="M81 97 Q88 93 95 97 Q91 102 86 102 Q82 101 81 97 Z" fill="#fb7185" />
+          `
+          : aqiTierKey === 'moderate'
+            ? `
+              <path d="M84 68 L81 79 Q85 82 91 79" fill="none" stroke="#7c3f1d" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M80 93 Q88 89 96 93" fill="none" stroke="#7c2d12" stroke-width="2.6" stroke-linecap="round" />
+            `
+            : aqiTierKey === 'sensitive'
+              ? `
+                <path d="M84 68 L81 79 Q85 82 91 79" fill="none" stroke="#7c3f1d" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M78 95 Q88 87 98 95" fill="none" stroke="#7c2d12" stroke-width="2.7" stroke-linecap="round" />
+              `
+              : aqiTierKey === 'unhealthy'
+                ? `
+                  <path d="M58 78 Q88 73 118 78 L113 102 Q88 109 63 102 Z" fill="#e7e5e4" stroke="#1e1b18" stroke-width="2.4" stroke-linejoin="round" />
+                  <path d="M64 85 Q88 82 112 85 M64 92 Q88 89 112 92 M65 98 Q88 96 111 98" fill="none" stroke="#a8a29e" stroke-width="1.7" stroke-linecap="round" />
+                  <path d="M58 80 L47 72 M118 80 L129 72" stroke="#f5f5f4" stroke-width="2.2" stroke-linecap="round" />
+                `
+                : `
+                  <path d="M59 77 Q88 68 117 77 L112 102 Q88 110 64 102 Z" fill="#f1f5f9" stroke="#1e1b18" stroke-width="2.5" stroke-linejoin="round" />
+                  <path d="M88 72 L88 106" stroke="#94a3b8" stroke-width="2" />
+                  <circle cx="75" cy="90" r="7.5" fill="#cbd5e1" stroke="#1e1b18" stroke-width="2" />
+                  <circle cx="75" cy="90" r="3.2" fill="#475569" />
+                  <circle cx="101" cy="90" r="7.5" fill="#cbd5e1" stroke="#1e1b18" stroke-width="2" />
+                  <circle cx="101" cy="90" r="3.2" fill="#475569" />
+                  <path d="M59 80 L47 72 M117 80 L129 72" stroke="#e2e8f0" stroke-width="2.3" stroke-linecap="round" />
+                `;
+
+        const armsSvg = aqiTierKey === 'sensitive'
+          ? `
+            <path d="M123 114 L134 156 L123 158 L114 126 Z" fill="url(#kurtaBarGrad)" stroke="#1e1b18" stroke-width="2.5" stroke-linejoin="round" />
+            <path d="M124 157 L123 166 L133 165 L133 156 Z" fill="#f8b26a" stroke="#1e1b18" stroke-width="2.2" stroke-linejoin="round" />
+            <path d="M57 114 L44 142 L79 124 L83 115 Z" fill="url(#kurtaBarGrad)" stroke="#1e1b18" stroke-width="2.5" stroke-linejoin="round" />
+            <ellipse cx="84" cy="118" rx="8.5" ry="6" fill="#f8b26a" stroke="#1e1b18" stroke-width="2.2" />
+          `
+          : `
+            <path d="M57 114 L46 156 L57 158 L66 126 Z" fill="url(#kurtaBarGrad)" stroke="#1e1b18" stroke-width="2.5" stroke-linejoin="round" />
+            <path d="M123 114 L134 156 L123 158 L114 126 Z" fill="url(#kurtaBarGrad)" stroke="#1e1b18" stroke-width="2.5" stroke-linejoin="round" />
+            <path d="M47 157 L47 166 L57 165 L56 156 Z" fill="#f8b26a" stroke="#1e1b18" stroke-width="2.2" stroke-linejoin="round" />
+            <path d="M124 157 L123 166 L133 165 L133 156 Z" fill="#f8b26a" stroke="#1e1b18" stroke-width="2.2" stroke-linejoin="round" />
+          `;
+
+        const characterSvg = `
+          <svg viewBox="0 0 180 212" class="${animClass} w-28 h-32 sm:w-36 sm:h-40 shrink-0 drop-shadow-[0_8px_16px_rgba(0,0,0,0.5)]" role="img" aria-label="2D kurta character synced to WAQI color bar">
+            <defs>
+              <linearGradient id="kurtaBarGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="${kurtaPalette.top}" />
+                <stop offset="100%" stop-color="${kurtaPalette.bot}" />
+              </linearGradient>
+              <linearGradient id="skinToneGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#fcc486" />
+                <stop offset="100%" stop-color="#f29f4b" />
+              </linearGradient>
+            </defs>
+
+            <rect x="70" y="166" width="13" height="34" fill="#9ca3af" stroke="#1e1b18" stroke-width="2.5" />
+            <rect x="97" y="166" width="13" height="34" fill="#9ca3af" stroke="#1e1b18" stroke-width="2.5" />
+            <path d="M56 199 L83 199 L83 205 L54 205 C50 205 50 199 56 199 Z" fill="#090d16" stroke="#05070c" stroke-width="2.2" />
+            <path d="M97 199 L124 199 C129 199 129 205 124 205 L97 205 Z" fill="#090d16" stroke="#05070c" stroke-width="2.2" />
+
+            <rect x="83" y="103" width="14" height="15" fill="#f5a756" stroke="#1e1b18" stroke-width="2.4" />
+
+            <path d="M57 112 L75 109 L90 126 L105 109 L123 112 L126 168 L119 168 L117 156 L115 168 L61 168 Z" fill="url(#kurtaBarGrad)" stroke="#1e1b18" stroke-width="2.5" stroke-linejoin="round" />
+
+            <path d="M73 109 L90 128 L107 109" fill="none" stroke="#cbd5e1" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M73 109 L90 128 L107 109" fill="none" stroke="#334155" stroke-width="2.6" stroke-dasharray="2.4 2.4" />
+            <line x1="90" y1="128" x2="90" y2="152" stroke="#cbd5e1" stroke-width="6" stroke-linecap="round" />
+            <line x1="90" y1="128" x2="90" y2="152" stroke="#334155" stroke-width="2.4" stroke-dasharray="2.2 2.2" />
+
+            ${armsSvg}
+
+            <path d="M128 69 C137 65 142 74 136 83 C132 89 126 89 123 85" fill="#f8b26a" stroke="#1e1b18" stroke-width="2.5" stroke-linecap="round" />
+            <path d="M129 73 C133 72 134 77 130 80" fill="none" stroke="#7c3f1d" stroke-width="2" stroke-linecap="round" />
+
+            <path d="M51 54 C46 78 55 104 86 106 C113 107 126 91 129 70 C131 53 123 36 90 36 C60 36 53 44 51 54 Z" fill="url(#skinToneGrad)" stroke="#1e1b18" stroke-width="2.6" />
+            <ellipse cx="62" cy="79" rx="8.5" ry="5" fill="#fb7185" opacity="${isAlertPose ? '0.62' : '0.45'}" />
+            <ellipse cx="112" cy="79" rx="8.5" ry="5" fill="#fb7185" opacity="${isAlertPose ? '0.62' : '0.45'}" />
+
+            <path d="M50 67 C47 54 43 44 37 40 C43 35 46 28 53 19 C67 5 94 2 114 11 C124 15 131 21 136 26 L140 18 L143 27 L149 27 L143 34 C146 47 141 64 128 74 C126 60 120 46 116 39 C103 45 86 46 73 41 C63 40 55 43 51 46 C49 54 51 61 50 67 Z" fill="#3b2212" stroke="#1e1b18" stroke-width="2.6" stroke-linejoin="round" />
+            <path d="M58 24 C73 10 96 7 115 15" fill="none" stroke="#633a1e" stroke-width="2.6" stroke-linecap="round" />
+            <path d="M107 16 L122 21 L126 28 L116 27 L111 33 L100 26 L108 23 Z" fill="#ffffff" />
+            <path d="M134 34 L141 44 L135 51 L131 48 L127 53 L122 44 L131 40 Z" fill="#ffffff" />
+
+            ${eyesAndBrowsSvg}
+            ${mouthOrMaskSvg}
+          </svg>
+        `;
+
         document.getElementById('sub-aqi-content').innerHTML = `
           <div class="p-4 rounded-xl bg-white/5 border border-white/10 flex flex-col justify-between">
-            <div>
-              <div class="text-xs text-slate-400">Live WAQI Index &amp; Range (${t.waqiSource})</div>
-              <div class="text-2xl font-extrabold mt-1" style="color:${waqiCat.color}">
-                ${hasValidAqi ? Math.round(aqiNum) : 'N/A'}
-                <span class="text-base sm:text-lg font-mono text-amber-200 ml-1">[${liveRangeStr}]</span>
+            <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+              <div>
+                <div class="text-xs text-slate-400">Live WAQI Index &amp; Range (${t.waqiSource})</div>
+                <div class="text-2xl font-extrabold mt-1" style="color:${waqiCat.color}">
+                  ${hasValidAqi ? Math.round(aqiNum) : 'N/A'}
+                  <span class="text-base sm:text-lg font-mono text-amber-200 ml-1">[${liveRangeStr}]</span>
+                </div>
+                <div class="text-xs font-semibold text-white mt-0.5">${waqiCat.label}</div>
+                <div class="text-xs text-slate-400 mt-1">${t.waqiStation}</div>
               </div>
-              <div class="text-xs font-semibold text-white mt-0.5">${waqiCat.label}</div>
-              <div class="text-xs text-slate-400 mt-1">${t.waqiStation}</div>
+              <div class="flex flex-col items-center self-center sm:self-auto">
+                ${characterSvg}
+                <span class="text-[10px] font-mono text-center mt-0.5 px-2 py-0.5 rounded-full bg-slate-950/70 border border-white/10" style="color:${aqiWarning.text}">
+                  ${characterCaption}
+                </span>
+              </div>
             </div>
             ${aqiSpectrumGuide}
           </div>
@@ -2695,19 +3069,19 @@
               <span class="prediction-badge">🔮 AI Forecast</span>
             </div>
             <div class="grid grid-cols-3 gap-2 mt-3 text-center">
-              <div class="p-2.5 rounded-xl bg-slate-950/65 border border-teal-400/25">
+              <div class="p-2 sm:p-2.5 rounded-xl bg-slate-950/65 border border-teal-400/25">
                 <div class="text-[10px] uppercase font-bold text-slate-400">Next Hr</div>
-                <div class="text-2xl sm:text-3xl font-extrabold text-teal-300 mt-0.5">${nextHrStr}</div>
+                <div class="text-xl sm:text-3xl font-extrabold text-teal-300 mt-0.5">${nextHrStr}</div>
               </div>
-              <div class="p-2.5 rounded-xl bg-slate-950/65 border border-amber-400/30">
+              <div class="p-2 sm:p-2.5 rounded-xl bg-slate-950/65 border border-amber-400/30">
                 <div class="text-[10px] uppercase font-bold text-slate-400">Today</div>
-                <div class="text-2xl sm:text-3xl font-extrabold text-amber-300 mt-0.5">${todayStr}</div>
-                ${todayRangeStr ? `<div class="text-xs sm:text-sm font-mono font-bold text-amber-200 mt-0.5">${todayRangeStr}</div>` : ''}
+                <div class="text-xl sm:text-3xl font-extrabold text-amber-300 mt-0.5">${todayStr}</div>
+                ${todayRangeStr ? `<div class="text-[11px] sm:text-sm font-mono font-bold text-amber-200 mt-0.5">${todayRangeStr}</div>` : ''}
               </div>
-              <div class="p-2.5 rounded-xl bg-slate-950/65 border border-purple-400/30">
+              <div class="p-2 sm:p-2.5 rounded-xl bg-slate-950/65 border border-purple-400/30">
                 <div class="text-[10px] uppercase font-bold text-slate-400">Tomorrow</div>
-                <div class="text-2xl sm:text-3xl font-extrabold text-purple-300 mt-0.5">${tmrwStr}</div>
-                ${tmrwRangeStr ? `<div class="text-xs sm:text-sm font-mono font-bold text-purple-200 mt-0.5">${tmrwRangeStr}</div>` : ''}
+                <div class="text-xl sm:text-3xl font-extrabold text-purple-300 mt-0.5">${tmrwStr}</div>
+                ${tmrwRangeStr ? `<div class="text-[11px] sm:text-sm font-mono font-bold text-purple-200 mt-0.5">${tmrwRangeStr}</div>` : ''}
               </div>
             </div>
             <div class="mt-3 p-2.5 rounded-xl text-xs"
@@ -2720,7 +3094,7 @@
           <div class="p-4 rounded-xl bg-white/5 border border-white/10 flex flex-col justify-between">
             <div>
               <div class="text-xs text-slate-400">Particulate Matter Concentration</div>
-              <div class="text-lg font-extrabold text-white mt-2">PM2.5: ${t.pm25} µg/m³ · PM10: ${t.pm10} µg/m³</div>
+              <div class="text-base sm:text-lg font-extrabold text-white mt-2">PM2.5: ${t.pm25} µg/m³ · PM10: ${t.pm10} µg/m³</div>
               <div class="text-xs text-slate-400 mt-1">Dominant Pollutant: ${String(t.waqiDominant || 'pm25').toUpperCase()}</div>
             </div>
             <div class="p-2.5 rounded-xl bg-slate-950/60 border border-white/10 text-[11px] text-slate-200 mt-3">
@@ -2766,11 +3140,11 @@
         const satWrap = document.getElementById('sat-imagery-wrapper');
         if (satWrap) {
           satWrap.innerHTML = `
-            <div class="px-4 py-2.5 bg-slate-900/90 border-b border-white/10 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div class="px-3.5 py-2.5 bg-slate-900/90 border-b border-white/10 flex flex-wrap items-center justify-between gap-2 text-xs">
               <span class="font-bold text-sky-200">🛰️ Live Orbital Satellite Imagery — ${t.city.name.toUpperCase()} (${t.city.lat.toFixed(4)}°, ${t.city.lon.toFixed(4)}°)</span>
               <span class="font-mono text-slate-400">Primary Threat: ${t.satellite?.disaster_risk_assessment?.primary_threat_status || 'Normal (No Disaster Imminent)'}</span>
             </div>
-            <div class="relative w-full h-80 sm:h-96 bg-slate-950">
+            <div class="relative w-full h-64 sm:h-96 bg-slate-950">
               <iframe
                 title="Satellite Imagery for ${t.city.name}"
                 src="${embedSatUrl}"
@@ -2792,11 +3166,11 @@
         document.getElementById('sub-wrf-content').innerHTML = `
           <div class="p-4 rounded-xl bg-white/5 border border-white/10">
             <div class="text-xs text-slate-400">Surface Wind &amp; Gusts (${compassDir})</div>
-            <div class="text-xl font-extrabold text-white mt-1">${baseWind.toFixed(1)} km/h (Gusts ${baseGust.toFixed(1)} km/h)</div>
+            <div class="text-lg sm:text-xl font-extrabold text-white mt-1">${baseWind.toFixed(1)} km/h (Gusts ${baseGust.toFixed(1)} km/h)</div>
           </div>
           <div class="p-4 rounded-xl bg-white/5 border border-white/10">
             <div class="text-xs text-slate-400">Surface Pressure</div>
-            <div class="text-xl font-extrabold text-sky-300 mt-1">${basePress.toFixed(1)} hPa</div>
+            <div class="text-lg sm:text-xl font-extrabold text-sky-300 mt-1">${basePress.toFixed(1)} hPa</div>
           </div>
           <div class="p-4 rounded-xl bg-white/5 border border-white/10">
             <div class="text-xs text-slate-400">Boundary Layer Stability</div>
@@ -2812,7 +3186,7 @@
               <p class="text-xs uppercase tracking-wider text-sky-300 font-bold">Deterministic Boundary-Layer Progression</p>
               <span class="text-[11px] font-mono text-slate-400">Bearing: ${compassDir}</span>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
               ${offsets.map((hOff, idx) => {
                 const wave = Math.sin(idx * 1.15);
                 const wVal = Math.max(2, Number((baseWind + wave * 2.2).toFixed(1)));
@@ -2830,7 +3204,7 @@
                       <span>${hOff === 0 ? 'Now' : `+${hOff}h`}</span>
                       <span class="font-mono text-[11px] text-slate-400">${pVal} hPa</span>
                     </div>
-                    <div class="text-sm font-bold text-white mt-1.5">${wVal} km/h <span class="text-xs text-amber-300">· Gust ${gVal}</span></div>
+                    <div class="text-xs sm:text-sm font-bold text-white mt-1.5">${wVal} km/h <span class="text-[11px] sm:text-xs text-amber-300">· Gust ${gVal}</span></div>
                     <div class="text-[11px] text-indigo-200 mt-1">${regime}</div>
                   </div>
                 `;
@@ -2923,7 +3297,7 @@
             document.getElementById('cal-forecast-body').innerHTML = `
               <div class="p-3 rounded-xl bg-slate-950/65 border border-sky-400/25 space-y-1.5">
                 <div class="flex items-center justify-between gap-2">
-                  <span class="text-base font-extrabold text-white">${w.condition || 'Seasonal Outlook'}</span>
+                  <span class="text-sm sm:text-base font-extrabold text-white">${w.condition || 'Seasonal Outlook'}</span>
                   <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-sky-500/20 border border-sky-400/35 text-sky-200">${data.meta?.forecast_mode || w.mode || 'Precision Model'}</span>
                 </div>
                 <div class="text-xs text-sky-200 font-medium">${verdictText}</div>
@@ -2973,7 +3347,6 @@
           }
         } catch (_) {}
 
-        // High-precision local harmonic + live-telemetry calibration fallback for 2026–2100
         const startOfYear = new Date(year, 0, 1);
         const doy = Math.max(1, Math.min(366, Math.round((dateObj - startOfYear) / 86400000) + 1));
         const annualPhase = ((doy - 196) / 365.25) * Math.PI * 2;
@@ -3013,7 +3386,6 @@
           : 11;
         const windKmh = Number(Math.max(4.5, Math.min(38.0, baseWind * 0.4 + (10 + monsoonPulse * 8 + Math.abs(Math.sin(doy * 0.21)) * 4) * 0.6)).toFixed(1));
 
-        // Seasonal + dispersion WAQI projection (winter stagnation vs. monsoon washout)
         const winterStagnation = Math.max(0, -Math.cos(annualPhase));
         const liveAqiAnchor = latestTelemetry && latestTelemetry.waqiAqi != null && !Number.isNaN(Number(latestTelemetry.waqiAqi))
           ? Number(latestTelemetry.waqiAqi)
@@ -3045,7 +3417,7 @@
         document.getElementById('cal-forecast-body').innerHTML = `
           <div class="p-3 rounded-xl bg-slate-950/65 border border-sky-400/25 space-y-1.5">
             <div class="flex items-center justify-between gap-2">
-              <span class="text-base font-extrabold text-white">${condLabel}</span>
+              <span class="text-sm sm:text-base font-extrabold text-white">${condLabel}</span>
               <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-400/35 text-indigo-200">${year > 2026 ? 'Multi-Year Model' : 'Harmonic Model'}</span>
             </div>
             <div class="text-xs text-sky-200 font-medium">${verdictLabel}</div>
@@ -3147,7 +3519,11 @@
       function switchPage(pageKey) {
         currentPage = pageKey;
         document.querySelectorAll('#page-tabs .nav-pill').forEach((btn) => {
-          btn.classList.toggle('active', btn.dataset.page === pageKey);
+          const isActive = btn.dataset.page === pageKey;
+          btn.classList.toggle('active', isActive);
+          if (isActive && typeof btn.scrollIntoView === 'function') {
+            btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+          }
         });
         document.querySelectorAll('.subpage').forEach((sec) => {
           sec.classList.toggle('hidden', sec.id !== `page-${pageKey}`);
@@ -3157,6 +3533,7 @@
 
       function bindEvents() {
         window.addEventListener('resize', resizeCanvases);
+        window.addEventListener('orientationchange', () => setTimeout(resizeCanvases, 120));
 
         const dashViewEl = document.getElementById('dashboard-view');
         if (dashViewEl) {
@@ -3181,7 +3558,11 @@
         document.getElementById('sun-toggle-btn').addEventListener('click', () => {
           solarMode = solarMode === 'contrasted' ? 'classic' : 'contrasted';
           const btn = document.getElementById('sun-toggle-btn');
-          if (btn) btn.textContent = solarMode === 'contrasted' ? '☀️ Sun: Contrasted' : '🌞 Sun: Classic';
+          if (btn) {
+            btn.innerHTML = solarMode === 'contrasted'
+              ? '☀️ <span class="hidden md:inline">Sun: Contrasted</span>'
+              : '🌞 <span class="hidden md:inline">Sun: Classic</span>';
+          }
           syncEffectForCurrentPage();
         });
         document.getElementById('spin-boost-btn').addEventListener('click', () => {
@@ -3213,7 +3594,7 @@
               dropEl.innerHTML = '';
               list.forEach((c) => {
                 const row = document.createElement('div');
-                row.className = 'px-3.5 py-2 text-xs hover:bg-sky-500/20 cursor-pointer flex justify-between items-center border-b border-white/5 last:border-none';
+                row.className = 'px-3.5 py-2.5 text-xs hover:bg-sky-500/20 cursor-pointer flex justify-between items-center border-b border-white/5 last:border-none';
                 row.innerHTML = `
                   <span><strong class="text-white">${c.name}</strong> <span class="text-slate-400">${c.admin1 ? c.admin1 + ', ' : ''}${c.country || ''}</span></span>
                   <span class="font-mono text-sky-300">${Number(c.latitude).toFixed(2)}°, ${Number(c.longitude).toFixed(2)}°</span>
@@ -3339,7 +3720,7 @@
         const t = (now || 0) * 0.001;
 
         if (earthGroup) {
-          if (autoRotate && !isDraggingGlobe) earthGroup.rotation.y += 0.0022;
+          if (autoRotate && !isDraggingGlobe && activePointers.size === 0) earthGroup.rotation.y += 0.0022;
           if (spinBoostVelocity > 0.0002) {
             earthGroup.rotation.y += spinBoostVelocity;
             spinBoostVelocity *= 0.965;

@@ -114,7 +114,7 @@ def build_rainfall_verdict(ai_pred, ai_verdict, wmo_code, rain_chance):
 
 
 # =========================================================
-# 3. COMMON UTILITIES & INDIA-LOCKED GEOCODING
+# 3. COMMON UTILITIES & GLOBAL/REGIONAL GEOCODING
 # =========================================================
 
 INDIAN_STATE_HUBS = {
@@ -145,6 +145,9 @@ INDIAN_STATE_HUBS = {
     "tripura": "Agartala",
     "uttar pradesh": "Lucknow",
     "uttarakhand": "Dehradun",
+    "mussoorie": "Mussoorie",
+    "nepal": "Kathmandu",
+    "kathmandu": "Kathmandu",
     "west bengal": "Kolkata",
     "delhi": "New Delhi",
     "jammu and kashmir": "Srinagar",
@@ -173,27 +176,24 @@ def _cached_geocode(normalized_query: str):
         params={
             "name": mapped_query,
             "count": 5,
-            "country_code": "IN",
             "format": "json",
         },
     )
     results = data.get("results") or []
 
     if not results:
-        data = safe_get(
-            url,
-            params={"name": normalized_query, "count": 1, "format": "json"},
-        )
-        results = data.get("results") or []
-
-    if not results:
         return None
 
-    place = results[0]
+    india_match = next((item for item in results if item.get("country_code") == "IN"), None)
+    place = (
+        india_match
+        if (india_match and normalized_query.lower() in INDIAN_STATE_HUBS and normalized_query.lower() not in {"nepal", "kathmandu"})
+        else results[0]
+    )
     return (
         float(place["latitude"]),
         float(place["longitude"]),
-        place.get("country", "India"),
+        place.get("country", "Earth"),
         place.get("name", mapped_query),
     )
 
@@ -228,31 +228,6 @@ def degrees_to_compass(deg):
     return directions[round(val / 45) % 8]
 
 
-def classify_current_weather(wmo_code, humidity, temp, precip_now=0.0):
-    """Classifies what is happening RIGHT NOW using live weather_code & current precipitation."""
-    code_val = _safe_int(wmo_code, 0)
-    hum_val = _safe_float(humidity, 50.0)
-    temp_val = _safe_float(temp, 25.0)
-    precip_val = _safe_float(precip_now, 0.0)
-
-    if code_val >= 95:
-        return "Thunderstorm", "THUNDER_EFFECT"
-    elif 71 <= code_val <= 77:
-        return "Snowfall", "SNOW_EFFECT"
-    elif code_val >= 51 or precip_val > 0.1:
-        return "Rainy", "RAIN_EFFECT"
-    elif code_val in [45, 48]:
-        return "Foggy / Hazy", "SMOG_FOG_EFFECT"
-    elif hum_val < 35 and temp_val > 28:
-        return "Dry", "DRY_HEAT_EFFECT"
-    elif code_val in [2, 3]:
-        return "Partly Cloudy", "CLOUD_EFFECT"
-    elif code_val in [0, 1]:
-        return "Clear", "SUN_RAYS_EFFECT"
-
-    return "Clear", "SUN_RAYS_EFFECT"
-
-
 def get_current_hour_slice(hourly: dict, current_time_str: str):
     """Finds the index in Open-Meteo hourly arrays matching the current local hour."""
     times = hourly.get("time") or []
@@ -264,6 +239,42 @@ def get_current_hour_slice(hourly: dict, current_time_str: str):
             if str(t).startswith(target_prefix):
                 return idx
     return 0
+
+
+def classify_current_weather(
+    wmo_code,
+    humidity,
+    temp,
+    precip_now=0.0,
+    hourly_code=None,
+    hourly_rain_prob=None,
+):
+    """Classifies what is happening RIGHT NOW using current + current-hour telemetry."""
+    raw_code = hourly_code if hourly_code is not None else wmo_code
+    code_val = _safe_int(raw_code, 0)
+    hum_val = _safe_float(humidity, 50.0)
+    temp_val = _safe_float(temp, 25.0)
+    precip_val = _safe_float(precip_now, 0.0)
+    prob_val = _safe_int(hourly_rain_prob, 0)
+
+    if code_val >= 95:
+        return "Thunderstorm", "THUNDER_EFFECT"
+    elif 71 <= code_val <= 77:
+        return "Snowfall", "SNOW_EFFECT"
+    elif code_val >= 51 or precip_val > 0.1:
+        return "Rainy", "RAIN_EFFECT"
+    elif prob_val >= 75 and hum_val >= 80:
+        return "Rainy Showers Likely", "RAIN_EFFECT"
+    elif code_val in [45, 48]:
+        return "Foggy / Hazy", "SMOG_FOG_EFFECT"
+    elif hum_val < 35 and temp_val > 28:
+        return "Dry", "DRY_HEAT_EFFECT"
+    elif code_val in [2, 3]:
+        return "Partly Cloudy", "CLOUD_EFFECT"
+    elif code_val in [0, 1]:
+        return "Clear", "SUN_RAYS_EFFECT"
+
+    return "Clear", "SUN_RAYS_EFFECT"
 
 
 def classify_weather_condition(wmo_code, humidity, temp, rain_chance, ai_rain_flag):
@@ -618,40 +629,46 @@ def get_open_meteo_aqi_prediction(lat, lon):
 
 
 # =========================================================
-# 6. WEATHER AND RAINFALL ENDPOINT
+# 6. WEATHER AND RAINFALL ENDPOINT (DYNAMIC PER HOUR)
 # =========================================================
+
+@lru_cache(maxsize=256)
+def _cached_weather_payload(lat: float, lon: float, hour_bucket: str):
+    weather_url = "https://api.open-meteo.com/v1/forecast"
+    return safe_get(
+        weather_url,
+        params={
+            "latitude": lat,
+            "longitude": lon,
+            "current": (
+                "temperature_2m,relative_humidity_2m,"
+                "apparent_temperature,precipitation,weather_code,"
+                "cloud_cover,surface_pressure,wind_speed_10m,"
+                "wind_direction_10m"
+            ),
+            "hourly": (
+                "temperature_2m,weather_code,visibility,uv_index,"
+                "precipitation_probability,wind_speed_10m,relative_humidity_2m"
+            ),
+            "daily": (
+                "weather_code,temperature_2m_max,temperature_2m_min,"
+                "sunrise,sunset,uv_index_max,"
+                "precipitation_probability_max,"
+                "wind_speed_10m_max,wind_speed_10m_min"
+            ),
+            "timezone": "auto",
+        },
+    )
+
 
 @app.get("/predict-rainfall")
 def predict_live_rainfall(location: str = "Kolkata"):
     lat, lon, country, resolved_location = get_live_coordinates(location)
-
-    weather_url = "https://api.open-meteo.com/v1/forecast"
+    utc_now = datetime.datetime.now(datetime.timezone.utc)
+    hour_bucket = utc_now.strftime("%Y-%m-%dT%H")
 
     try:
-        data = safe_get(
-            weather_url,
-            params={
-                "latitude": lat,
-                "longitude": lon,
-                "current": (
-                    "temperature_2m,relative_humidity_2m,"
-                    "apparent_temperature,precipitation,weather_code,"
-                    "cloud_cover,surface_pressure,wind_speed_10m,"
-                    "wind_direction_10m"
-                ),
-                "hourly": (
-                    "weather_code,visibility,uv_index,precipitation_probability,"
-                    "wind_speed_10m,relative_humidity_2m"
-                ),
-                "daily": (
-                    "weather_code,temperature_2m_max,temperature_2m_min,"
-                    "sunrise,sunset,uv_index_max,"
-                    "precipitation_probability_max,"
-                    "wind_speed_10m_max,wind_speed_10m_min"
-                ),
-                "timezone": "auto",
-            },
-        )
+        data = _cached_weather_payload(round(lat, 4), round(lon, 4), hour_bucket)
     except requests.RequestException as exc:
         raise HTTPException(status_code=502, detail=f"Weather API error: {exc}")
 
@@ -659,16 +676,43 @@ def predict_live_rainfall(location: str = "Kolkata"):
     daily = data.get("daily", {})
     hourly = data.get("hourly", {})
 
-    temp = _safe_float(current.get("temperature_2m"), 25.0)
+    utc_offset = _safe_int(data.get("utc_offset_seconds"), 0)
+    local_now = utc_now + datetime.timedelta(seconds=utc_offset)
+    current_time_str = str(current.get("time") or local_now.strftime("%Y-%m-%dT%H:%M"))
+
+    # Align hourly slice to the actual current local hour rather than midnight index 0
+    cur_idx = get_current_hour_slice(hourly, current_time_str)
+    hourly_temps = hourly.get("temperature_2m") or []
+    hourly_hums = hourly.get("relative_humidity_2m") or []
+    hourly_winds = hourly.get("wind_speed_10m") or []
+    hourly_probs = hourly.get("precipitation_probability") or []
+    hourly_codes = hourly.get("weather_code") or []
+    hourly_vis = hourly.get("visibility") or []
+
+    temp = _safe_float(
+        current.get("temperature_2m"),
+        hourly_temps[cur_idx] if cur_idx < len(hourly_temps) else 25.0,
+    )
     feels_like = _safe_float(current.get("apparent_temperature"), temp)
-    humidity = _safe_float(current.get("relative_humidity_2m"), 50.0)
+    humidity = _safe_float(
+        current.get("relative_humidity_2m"),
+        hourly_hums[cur_idx] if cur_idx < len(hourly_hums) else 50.0,
+    )
     precip_now = _safe_float(current.get("precipitation"), 0.0)
-    wind_speed = _safe_float(current.get("wind_speed_10m"), 5.0)
+    wind_speed = _safe_float(
+        current.get("wind_speed_10m"),
+        hourly_winds[cur_idx] if cur_idx < len(hourly_winds) else 5.0,
+    )
     wind_dir_deg = _safe_float(current.get("wind_direction_10m"), 0.0)
     pressure = _safe_float(current.get("surface_pressure"), 1013.0)
     clouds = _safe_float(current.get("cloud_cover"), 0.0)
     wmo_code = _safe_int(current.get("weather_code"), 0)
-    current_time_str = str(current.get("time") or "")
+
+    hour_code = _safe_int(hourly_codes[cur_idx] if cur_idx < len(hourly_codes) else None, wmo_code)
+    corrected_rain = _safe_int(
+        hourly_probs[cur_idx] if cur_idx < len(hourly_probs) and hourly_probs[cur_idx] is not None else None,
+        0,
+    )
 
     max_list = daily.get("temperature_2m_max") or []
     min_list = daily.get("temperature_2m_min") or []
@@ -683,30 +727,25 @@ def predict_live_rainfall(location: str = "Kolkata"):
     uv_list = daily.get("uv_index_max") or []
     uv_index = _safe_float(uv_list[0] if uv_list else None, 5.0)
 
-    # Align hourly slice to the actual current local hour rather than midnight index 0
-    cur_idx = get_current_hour_slice(hourly, current_time_str)
-    hourly_probs = hourly.get("precipitation_probability") or []
-    hourly_vis = hourly.get("visibility") or []
-
-    if cur_idx < len(hourly_probs) and hourly_probs[cur_idx] is not None:
-        corrected_rain = _safe_int(hourly_probs[cur_idx], 0)
-    else:
-        corrected_rain = 0
-
     vis_raw = _safe_float(
         hourly_vis[cur_idx] if cur_idx < len(hourly_vis) else None, 10000.0
     )
     visibility_km = round(vis_raw / 1000.0, 1)
 
     weather_label, visual_trigger = classify_current_weather(
-        wmo_code, humidity, temp, precip_now
+        wmo_code,
+        humidity,
+        temp,
+        precip_now,
+        hourly_code=hour_code,
+        hourly_rain_prob=corrected_rain,
     )
 
     ai_pred, raw_ai_verdict = predict_rainfall_flag(temp, humidity, wind_speed, pressure)
-    if corrected_rain < 20 and precip_now <= 0.1 and wmo_code < 51:
+    if corrected_rain < 20 and precip_now <= 0.1 and wmo_code < 51 and hour_code < 51:
         ai_verdict = "No Rain Currently Expected"
     else:
-        ai_verdict = build_rainfall_verdict(ai_pred, raw_ai_verdict, wmo_code, corrected_rain)
+        ai_verdict = build_rainfall_verdict(ai_pred, raw_ai_verdict, max(wmo_code, hour_code), corrected_rain)
 
     wind_min = max(0.0, round(wind_speed - 2.0, 1))
     wind_max = round(wind_speed + 2.0, 1)
@@ -760,14 +799,15 @@ def predict_live_rainfall(location: str = "Kolkata"):
         })
 
     hourly_rain_clean = [
-        _safe_int(v, 0) for v in (hourly.get("precipitation_probability") or [])[cur_idx : cur_idx + 6]
+        _safe_int(v, 0) for v in hourly_probs[cur_idx : cur_idx + 6]
     ]
     hourly_codes_clean = [
-        _safe_int(v, 0) for v in (hourly.get("weather_code") or [])[cur_idx : cur_idx + 6]
+        _safe_int(v, 0) for v in hourly_codes[cur_idx : cur_idx + 6]
     ]
 
     return {
-        "date": str(datetime.date.today()),
+        "date": str(local_now.date()),
+        "observed_at": current_time_str,
         "region": resolved_location.upper(),
         "country": country,
         "coordinates": {"latitude": lat, "longitude": lon},
@@ -1146,6 +1186,16 @@ def get_wrf_model(location: str = "Kolkata"):
             "wind_direction_compass": degrees_to_compass(wind_dir),
             "atmospheric_stability_index": stability,
         },
+        "progression_12h": [
+            {
+                "horizon_label": "Now" if h_off == 0 else f"+{h_off}h",
+                "hours_ahead": h_off,
+                "wind_speed_kmh": max(2.0, round(wind_speed + math.sin(idx * 1.15) * 2.2, 1)),
+                "wind_gusts_kmh": max(3.5, round(wind_gusts + math.sin(idx * 1.15) * 3.1, 1)),
+                "surface_pressure_mb": round(pressure - math.sin(idx * 1.15) * 0.8, 1),
+            }
+            for idx, h_off in enumerate([0, 3, 6, 12])
+        ],
     }
 
 
