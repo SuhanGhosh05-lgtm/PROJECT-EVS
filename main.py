@@ -30,7 +30,6 @@ load_dotenv(BASE_DIR / ".env")
 WAQI_API_TOKEN = os.getenv("WAQI_API_TOKEN", os.getenv("WAQI_TOKEN", "")).strip().strip("'\"")
 ACCUWEATHER_API_KEY = os.getenv("ACCUWEATHER_API_KEY", "").strip().strip("'\"")
 
-# Use redoc_url="/redoc" (valid FastAPI keyword argument)
 app = FastAPI(
     title="EVS Climate AI - Live Data Engine",
     docs_url="/docs",
@@ -101,6 +100,49 @@ def _run_safely(fn, fallback_fn, *args, **kwargs):
         return fallback_fn()
 
 
+def _is_snow_code(code):
+    """Returns True for WMO snowfall and snow shower codes."""
+    return _safe_int(code, 0) in [71, 73, 75, 77, 85, 86]
+
+
+def _is_heavy_snow_code(code):
+    """Returns True for heavy snowfall and heavy snow shower WMO codes."""
+    return _safe_int(code, 0) in [75, 86]
+
+
+def _is_snow_condition(code, temp, precip_now=0.0, rain_chance=0, hour_code=None):
+    """Returns True when WMO code, hourly code, or freezing precipitation indicates snow."""
+    code_val = _safe_int(code, 0)
+    h_code_val = _safe_int(hour_code if hour_code is not None else code_val, code_val)
+    temp_val = _safe_float(temp, 25.0)
+    precip_val = _safe_float(precip_now, 0.0)
+    rain_val = _safe_int(rain_chance, 0)
+    return (
+        _is_snow_code(code_val)
+        or _is_snow_code(h_code_val)
+        or (temp_val <= 1.0 and (precip_val > 0.05 or rain_val >= 35))
+    )
+
+
+def _is_thunder_condition(code, rain_chance=0, precip_now=0.0, temp=25.0, hour_code=None):
+    """Returns True for thunderstorms or heavy rain/high precip (>=85%) when not snow."""
+    code_val = _safe_int(code, 0)
+    h_code_val = _safe_int(hour_code if hour_code is not None else code_val, code_val)
+    chance_val = _safe_int(rain_chance, 0)
+    precip_val = _safe_float(precip_now, 0.0)
+    temp_val = _safe_float(temp, 25.0)
+
+    if _is_snow_condition(code_val, temp_val, precip_val, chance_val, hour_code=h_code_val):
+        return False
+
+    return (
+        code_val in [82, 95, 96, 99]
+        or h_code_val in [82, 95, 96, 99]
+        or precip_val >= 5.0
+        or (chance_val >= 85 and code_val not in [0, 1])
+    )
+
+
 def _normalize_rain_chance(wmo_code, rain_chance, precip_now=0.0, hour_code=None):
     """Normalizes rain probability so clear/sunny dry skies report 0% on minor noise."""
     code_val = _safe_int(wmo_code, 0)
@@ -115,6 +157,8 @@ def _normalize_rain_chance(wmo_code, rain_chance, precip_now=0.0, hour_code=None
     )
     is_dry_sky = (
         not has_active_rain
+        and not _is_snow_code(code_val)
+        and not _is_snow_code(h_code_val)
         and code_val in [0, 1, 2, 3]
         and h_code_val in [0, 1, 2, 3]
         and precip_val <= 0.05
@@ -156,21 +200,34 @@ def predict_rainfall_flag(temp, humidity, wind_speed, pressure):
         except Exception as exc:
             print(f"[MODEL] Rainfall prediction error: {exc}")
 
-    rule_pred = 1 if (h_val >= 82 and p_val < 1008) else 0
-    rule_verdict = "Rain Expected Today" if rule_pred == 1 else "No Rain Expected Today"
-    return rule_pred, rule_verdict, "Meteorological Rule Fallback"
+    fallback_flag = 1 if (h_val >= 82.0 and p_val < 1009.0) else 0
+    fallback_verdict = "Rain Expected Today" if fallback_flag == 1 else "No Rain Expected Today"
+    return fallback_flag, fallback_verdict, "Meteorological Rule Fallback"
 
 
-def build_rainfall_verdict(ai_pred, wmo_code, rain_chance, precip_now=0.0):
+def build_rainfall_verdict(ai_pred, wmo_code, rain_chance, precip_now=0.0, temp=25.0, hour_code=None):
     """Aligns rainfall verdict and effective rain flag with live weather & Open-Meteo."""
     code_val = _safe_int(wmo_code, 0)
+    h_code_val = _safe_int(hour_code if hour_code is not None else code_val, code_val)
     chance_val = _safe_int(rain_chance, 0)
     precip_val = _safe_float(precip_now, 0.0)
+    temp_val = _safe_float(temp, 25.0)
+
+    if _is_snow_condition(code_val, temp_val, precip_val, chance_val, hour_code=h_code_val):
+        snow_word = (
+            "Heavy Snowfall"
+            if (_is_heavy_snow_code(code_val) or _is_heavy_snow_code(h_code_val) or precip_val >= 3.0)
+            else "Snowfall"
+        )
+        return 0, f"{snow_word} Expected Today"
+
+    if _is_thunder_condition(code_val, chance_val, precip_val, temp=temp_val, hour_code=h_code_val):
+        return 1, "Thunderstorm & Heavy Rain Expected Today"
 
     if code_val in [0, 1] and precip_val <= 0.05 and chance_val < 25:
         return 0, "No Rain Expected Today (Sunny & Dry)"
 
-    if precip_val > 0.1 or code_val in [63, 65, 67, 81, 82] or chance_val >= 55:
+    if precip_val > 0.1 or code_val in [63, 81] or chance_val >= 55:
         return 1, "Rain Expected Today"
 
     if ai_pred == 1 and chance_val >= 25:
@@ -228,6 +285,84 @@ INDIAN_STATE_HUBS = {
     "lakshadweep": "Kavaratti",
 }
 
+KNOWN_CITY_COORDS = {
+    "salt lake city": (22.5867, 88.4172, "India", "Salt Lake City"),
+    "salt lake": (22.5867, 88.4172, "India", "Salt Lake"),
+    "bidhannagar": (22.5867, 88.4172, "India", "Salt Lake"),
+    "howrah": (22.5958, 88.2636, "India", "Howrah"),
+    "durgapur": (23.5204, 87.3119, "India", "Durgapur"),
+    "asansol": (23.6739, 86.9524, "India", "Asansol"),
+    "siliguri": (26.7271, 88.3953, "India", "Siliguri"),
+    "darjeeling": (27.0360, 88.2627, "India", "Darjeeling"),
+    "noida": (28.5355, 77.3910, "India", "Noida"),
+    "ghaziabad": (28.6692, 77.4538, "India", "Ghaziabad"),
+    "kanpur": (26.4499, 80.3319, "India", "Kanpur"),
+    "varanasi": (25.3176, 82.9739, "India", "Varanasi"),
+    "agra": (27.1767, 78.0081, "India", "Agra"),
+    "prayagraj": (25.4358, 81.8463, "India", "Prayagraj"),
+    "gorakhpur": (26.7606, 83.3732, "India", "Gorakhpur"),
+    "meerut": (28.9845, 77.7064, "India", "Meerut"),
+    "ayodhya": (26.7922, 82.1998, "India", "Ayodhya"),
+    "pune": (18.5204, 73.8567, "India", "Pune"),
+    "nagpur": (21.1458, 79.0882, "India", "Nagpur"),
+    "nashik": (19.9975, 73.7898, "India", "Nashik"),
+    "thane": (19.2183, 72.9781, "India", "Thane"),
+    "aurangabad": (19.8762, 75.3433, "India", "Aurangabad"),
+    "navi mumbai": (19.0330, 73.0297, "India", "Navi Mumbai"),
+    "mysuru": (12.2958, 76.6394, "India", "Mysuru"),
+    "mangaluru": (12.9141, 74.8560, "India", "Mangaluru"),
+    "hubballi": (15.3647, 75.1240, "India", "Hubballi"),
+    "coimbatore": (11.0168, 76.9558, "India", "Coimbatore"),
+    "madurai": (9.9252, 78.1198, "India", "Madurai"),
+    "tiruchirappalli": (10.7905, 78.7047, "India", "Tiruchirappalli"),
+    "salem": (11.6643, 78.1460, "India", "Salem"),
+    "kochi": (9.9312, 76.2673, "India", "Kochi"),
+    "kozhikode": (11.2588, 75.7804, "India", "Kozhikode"),
+    "thrissur": (10.5276, 76.2144, "India", "Thrissur"),
+    "warangal": (17.9689, 79.5941, "India", "Warangal"),
+    "visakhapatnam": (17.6868, 83.2185, "India", "Visakhapatnam"),
+    "vijayawada": (16.5062, 80.6480, "India", "Vijayawada"),
+    "guntur": (16.3067, 80.4365, "India", "Guntur"),
+    "tirupati": (13.6288, 79.4192, "India", "Tirupati"),
+    "surat": (21.1702, 72.8311, "India", "Surat"),
+    "vadodara": (22.3072, 73.1812, "India", "Vadodara"),
+    "rajkot": (22.3039, 70.8022, "India", "Rajkot"),
+    "gandhinagar": (23.2156, 72.6369, "India", "Gandhinagar"),
+    "jodhpur": (26.2389, 73.0243, "India", "Jodhpur"),
+    "udaipur": (24.5854, 73.7125, "India", "Udaipur"),
+    "kota": (25.2138, 75.8648, "India", "Kota"),
+    "ajmer": (26.4499, 74.6399, "India", "Ajmer"),
+    "indore": (22.7196, 75.8577, "India", "Indore"),
+    "jabalpur": (23.1815, 79.9864, "India", "Jabalpur"),
+    "gwalior": (26.2183, 78.1828, "India", "Gwalior"),
+    "ujjain": (23.1765, 75.7885, "India", "Ujjain"),
+    "gaya": (24.7914, 85.0002, "India", "Gaya"),
+    "jamshedpur": (22.8046, 86.2029, "India", "Jamshedpur"),
+    "dhanbad": (23.7957, 86.4304, "India", "Dhanbad"),
+    "cuttack": (20.4625, 85.8830, "India", "Cuttack"),
+    "rourkela": (22.2604, 84.8536, "India", "Rourkela"),
+    "puri": (19.8135, 85.8312, "India", "Puri"),
+    "bhilai": (21.2094, 81.4285, "India", "Bhilai"),
+    "faridabad": (28.4089, 77.3178, "India", "Faridabad"),
+    "ludhiana": (30.9010, 75.8573, "India", "Ludhiana"),
+    "amritsar": (31.6340, 74.8723, "India", "Amritsar"),
+    "jalandhar": (31.3260, 75.5762, "India", "Jalandhar"),
+    "manali": (32.2396, 77.1887, "India", "Manali"),
+    "dharamshala": (32.2190, 76.3234, "India", "Dharamshala"),
+    "haridwar": (29.9457, 78.1642, "India", "Haridwar"),
+    "rishikesh": (30.0869, 78.2676, "India", "Rishikesh"),
+    "nainital": (29.3919, 79.4542, "India", "Nainital"),
+    "jammu": (32.7266, 74.8570, "India", "Jammu"),
+    "gulmarg": (34.0484, 74.3805, "India", "Gulmarg"),
+    "dibrugarh": (27.4728, 94.9120, "India", "Dibrugarh"),
+    "silchar": (24.8333, 92.7789, "India", "Silchar"),
+    "dimapur": (25.9091, 93.7266, "India", "Dimapur"),
+    "margao": (15.2832, 73.9862, "India", "Margao"),
+    "port blair": (11.6234, 92.7265, "India", "Port Blair"),
+    "daman": (20.3974, 72.8328, "India", "Daman"),
+    "kavaratti": (10.5667, 72.6417, "India", "Kavaratti"),
+}
+
 
 def _build_retry_session():
     """Creates a pooled requests Session configured with bounded retries."""
@@ -257,6 +392,34 @@ def safe_get(url, params=None, timeout=8):
     return response.json()
 
 
+def degrees_to_compass(deg):
+    """Converts wind direction degrees into an 8-point compass direction."""
+    if deg is None:
+        return "N"
+    try:
+        val = float(deg)
+        if not math.isfinite(val):
+            return "N"
+    except (TypeError, ValueError):
+        return "N"
+
+    directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
+    return directions[round(val / 45) % 8]
+
+
+def get_current_hour_slice(hourly: dict, current_time_str: str):
+    """Finds the index in Open-Meteo hourly arrays matching the current local hour."""
+    times = hourly.get("time") or []
+    if not times:
+        return 0
+    target_prefix = (current_time_str or "")[:13]
+    if target_prefix:
+        for idx, t in enumerate(times):
+            if str(t).startswith(target_prefix):
+                return idx
+    return 0
+
+
 # =========================================================
 # ACCUWEATHER ACCURATE CURRENT CONDITIONS & ALERTS
 # =========================================================
@@ -282,6 +445,12 @@ def _accu_cache_set(cache_store: dict, key, value):
 
 def _accu_map_icon_to_wmo(weather_icon: int | None, is_precipitation: bool = False) -> int:
     """Maps AccuWeather icon numbers to WMO weather codes used across Klima."""
+    if weather_icon is not None:
+        icon = _safe_int(weather_icon, 1)
+        if icon in (22, 23, 24, 25, 26, 29, 43, 44):
+            return 75 if icon in (22, 24, 44) else 71
+        if icon in (19, 20, 21):
+            return 85
     if is_precipitation:
         return 61
     if weather_icon is None:
@@ -299,8 +468,6 @@ def _accu_map_icon_to_wmo(weather_icon: int | None, is_precipitation: bool = Fal
         return 80
     if icon in (15, 16, 17, 41, 42):
         return 95
-    if icon in (19, 20, 21, 22, 23, 24, 25, 26, 29, 43, 44):
-        return 71
     return 2
 
 
@@ -453,8 +620,12 @@ def fetch_accuweather_accuracy_and_alerts(lat: float, lon: float) -> dict:
 @lru_cache(maxsize=256)
 def _cached_geocode(normalized_query: str):
     """Resolves a location name to (lat, lon, country, resolved_name) with caching."""
+    q_lower = normalized_query.lower().strip()
+    if q_lower in KNOWN_CITY_COORDS:
+        return KNOWN_CITY_COORDS[q_lower]
+
     url = "https://geocoding-api.open-meteo.com/v1/search"
-    mapped_query = INDIAN_STATE_HUBS.get(normalized_query.lower(), normalized_query)
+    mapped_query = INDIAN_STATE_HUBS.get(q_lower, normalized_query)
 
     try:
         data = safe_get(
@@ -467,7 +638,7 @@ def _cached_geocode(normalized_query: str):
             timeout=6,
         )
     except requests.RequestException:
-        if normalized_query.lower() == "kolkata" or mapped_query.lower() == "kolkata":
+        if q_lower == "kolkata" or mapped_query.lower() == "kolkata":
             return (22.5726, 88.3639, "India", "Kolkata")
         raise
 
@@ -475,16 +646,14 @@ def _cached_geocode(normalized_query: str):
     if not results:
         return None
 
-    india_match = next((item for item in results if item.get("country_code") == "IN"), None)
-    place = (
-        india_match
-        if (
-            india_match
-            and normalized_query.lower() in INDIAN_STATE_HUBS
-            and normalized_query.lower() not in {"nepal", "kathmandu"}
-        )
-        else results[0]
-    )
+    if q_lower in INDIAN_STATE_HUBS and q_lower not in {"nepal", "kathmandu"}:
+        india_match = next((item for item in results if item.get("country_code") == "IN"), None)
+        place = india_match if india_match else max(results, key=lambda r: _safe_float(r.get("population"), 0.0))
+    else:
+        exact_matches = [r for r in results if str(r.get("name", "")).strip().lower() == q_lower]
+        pool = exact_matches if exact_matches else results
+        place = max(pool, key=lambda r: _safe_float(r.get("population"), 0.0))
+
     return (
         float(place["latitude"]),
         float(place["longitude"]),
@@ -510,32 +679,62 @@ def get_live_coordinates(location: str):
     return resolved
 
 
-def degrees_to_compass(deg):
-    """Converts wind direction degrees into an 8-point compass direction."""
-    if deg is None:
-        return "N"
-    try:
-        val = float(deg)
-        if not math.isfinite(val):
-            return "N"
-    except (TypeError, ValueError):
-        return "N"
+def _classify_sky_common(wmo_code, humidity, temp, rain_chance, precip_mm=0.0, hour_code=None, is_live=False):
+    """Single source of truth for classifying snow, thunder, rain, cloud, dry, and sunny states."""
+    code_val = _safe_int(wmo_code, 0)
+    h_code_val = _safe_int(hour_code if hour_code is not None else code_val, code_val)
+    hum_val = _safe_float(humidity, 50.0)
+    temp_val = _safe_float(temp, 25.0)
+    precip_val = _safe_float(precip_mm, 0.0)
+    chance_val = _normalize_rain_chance(code_val, rain_chance, precip_now=precip_val, hour_code=h_code_val)
 
-    directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
-    return directions[round(val / 45) % 8]
+    effective_snow_code = (
+        code_val if _is_snow_code(code_val)
+        else (h_code_val if _is_snow_code(h_code_val) else None)
+    )
+    heavy_snow_mm = 3.0 if is_live else 4.0
+    if _is_snow_condition(code_val, temp_val, precip_val, chance_val, hour_code=h_code_val):
+        snow_label = (
+            "Heavy Snowfall"
+            if (_is_heavy_snow_code(effective_snow_code) or precip_val >= heavy_snow_mm)
+            else "Snowfall"
+        )
+        return snow_label, "SNOW_EFFECT", chance_val
 
+    if _is_thunder_condition(code_val, chance_val, precip_val, temp=temp_val, hour_code=h_code_val):
+        return "Thunderstorm", "THUNDER_EFFECT", chance_val
 
-def get_current_hour_slice(hourly: dict, current_time_str: str):
-    """Finds the index in Open-Meteo hourly arrays matching the current local hour."""
-    times = hourly.get("time") or []
-    if not times:
-        return 0
-    target_prefix = (current_time_str or "")[:13]
-    if target_prefix:
-        for idx, t in enumerate(times):
-            if str(t).startswith(target_prefix):
-                return idx
-    return 0
+    if code_val in [51, 53, 55, 56, 57]:
+        return "Light Drizzle", "RAIN_EFFECT", chance_val
+
+    heavy_precip_mm = 0.5 if is_live else 0.2
+    rain_prob_min = 65 if is_live else 55
+    if precip_val > heavy_precip_mm or code_val in [63, 81] or (chance_val >= rain_prob_min and code_val not in [0, 1]):
+        label = "Rainy" if (precip_val > heavy_precip_mm or code_val in [63, 81] or chance_val >= 75) else "Passing Showers"
+        return label, "RAIN_EFFECT", chance_val
+
+    if code_val in [61, 66, 80]:
+        if precip_val <= 0.1 and chance_val == 0:
+            return "Mostly Sunny", "SUN_RAYS_EFFECT", chance_val
+        return ("Passing Showers" if is_live else "Scattered Clouds"), ("RAIN_EFFECT" if is_live else "CLOUD_EFFECT"), chance_val
+
+    if code_val in [45, 48]:
+        return "Foggy / Hazy", "SMOG_FOG_EFFECT", chance_val
+
+    if hum_val < 35 and temp_val > 28:
+        return "Dry & Warm", "DRY_HEAT_EFFECT", chance_val
+
+    if code_val in [2, 3]:
+        if precip_val <= 0.1 and chance_val == 0 and hum_val < 85:
+            return "Mostly Sunny", "SUN_RAYS_EFFECT", chance_val
+        if code_val == 2:
+            return "Scattered Clouds", "CLOUD_EFFECT", chance_val
+        return ("Overcast & Dry" if chance_val == 0 else "Overcast"), "CLOUD_EFFECT", chance_val
+
+    if code_val == 1:
+        return "Mostly Sunny", "SUN_RAYS_EFFECT", chance_val
+
+    return "Clear & Sunny", "SUN_RAYS_EFFECT", chance_val
 
 
 def classify_current_weather(
@@ -546,81 +745,30 @@ def classify_current_weather(
     hourly_code=None,
     hourly_rain_prob=None,
 ):
-    """Classifies current live weather from WMO code & active precipitation (single definition)."""
-    code_val = _safe_int(wmo_code, 0)
-    hum_val = _safe_float(humidity, 50.0)
-    temp_val = _safe_float(temp, 25.0)
-    precip_val = _safe_float(precip_now, 0.0)
-    rain_prob_val = _safe_int(hourly_rain_prob, 0)
-
-    if code_val >= 95:
-        return "Thunderstorm", "THUNDER_EFFECT"
-    elif 71 <= code_val <= 77:
-        return "Snowfall", "SNOW_EFFECT"
-    elif code_val in [51, 53, 55, 56, 57]:
-        return "Light Drizzle", "RAIN_EFFECT"
-    elif precip_val > 0.5 or code_val in [63, 65, 67, 81, 82] or (rain_prob_val >= 65 and code_val not in [0, 1]):
-        label = "Rainy" if (precip_val > 0.5 or code_val in [63, 65, 67, 81, 82] or rain_prob_val >= 75) else "Passing Showers"
-        return label, "RAIN_EFFECT"
-    elif code_val in [61, 66, 80]:
-        if precip_val <= 0.1 and rain_prob_val == 0:
-            return "Mostly Sunny", "SUN_RAYS_EFFECT"
-        return "Passing Showers", "RAIN_EFFECT"
-    elif code_val in [45, 48]:
-        return "Foggy / Hazy", "SMOG_FOG_EFFECT"
-    elif hum_val < 35 and temp_val > 28:
-        return "Dry & Warm", "DRY_HEAT_EFFECT"
-    elif code_val == 2:
-        if precip_val <= 0.1 and rain_prob_val == 0 and hum_val < 85:
-            return "Mostly Sunny", "SUN_RAYS_EFFECT"
-        return "Scattered Clouds", "CLOUD_EFFECT"
-    elif code_val == 3:
-        if precip_val <= 0.1 and rain_prob_val == 0 and hum_val < 85:
-            return "Mostly Sunny", "SUN_RAYS_EFFECT"
-        return "Overcast & Dry" if rain_prob_val == 0 else "Overcast", "CLOUD_EFFECT"
-    elif code_val == 1:
-        return "Mostly Sunny", "SUN_RAYS_EFFECT"
-    elif code_val == 0:
-        return "Clear & Sunny", "SUN_RAYS_EFFECT"
-
-    return "Clear & Sunny", "SUN_RAYS_EFFECT"
+    """Classifies current live weather from WMO code & active precipitation."""
+    label, trigger, _ = _classify_sky_common(
+        wmo_code,
+        humidity,
+        temp,
+        hourly_rain_prob,
+        precip_mm=precip_now,
+        hour_code=hourly_code,
+        is_live=True,
+    )
+    return label, trigger
 
 
 def classify_weather_condition(wmo_code, humidity, temp, rain_chance, ai_rain_flag, precip_mm=0.0):
     """Classifies daily/forecast weather condition, visual trigger, and normalized rain chance."""
-    code_val = _safe_int(wmo_code, 0)
-    hum_val = _safe_float(humidity, 50.0)
-    temp_val = _safe_float(temp, 25.0)
-    precip_val = _safe_float(precip_mm, 0.0)
-    chance_val = _normalize_rain_chance(code_val, rain_chance, precip_now=precip_val, hour_code=code_val)
-
-    if code_val in [51, 53, 55, 56, 57]:
-        return "Light Drizzle", "RAIN_EFFECT", chance_val
-    elif precip_val > 0.2 or code_val in [63, 65, 67, 81, 82] or (chance_val >= 55 and code_val not in [0, 1]):
-        label = "Rainy" if (precip_val > 0.2 or code_val in [63, 65, 67, 81, 82] or chance_val >= 75) else "Passing Showers"
-        return label, "RAIN_EFFECT", chance_val
-    elif code_val in [61, 66, 80] and precip_val <= 0.2:
-        if chance_val == 0:
-            return "Mostly Sunny", "SUN_RAYS_EFFECT", chance_val
-        return "Scattered Clouds", "CLOUD_EFFECT", chance_val
-    elif hum_val < 35 and temp_val > 28:
-        return "Dry & Warm", "DRY_HEAT_EFFECT", chance_val
-    elif code_val == 2:
-        if precip_val <= 0.1 and chance_val == 0 and hum_val < 85:
-            return "Mostly Sunny", "SUN_RAYS_EFFECT", chance_val
-        return "Scattered Clouds", "CLOUD_EFFECT", chance_val
-    elif code_val == 3:
-        if precip_val <= 0.1 and chance_val == 0 and hum_val < 85:
-            return "Mostly Sunny", "SUN_RAYS_EFFECT", chance_val
-        return "Overcast & Dry" if chance_val == 0 else "Overcast", "CLOUD_EFFECT", chance_val
-    elif code_val == 1:
-        return "Mostly Sunny", "SUN_RAYS_EFFECT", chance_val
-    elif code_val == 0:
-        return "Clear & Sunny", "SUN_RAYS_EFFECT", chance_val
-    elif code_val in [45, 48]:
-        return "Foggy / Hazy", "SMOG_FOG_EFFECT", chance_val
-
-    return "Clear & Sunny", "SUN_RAYS_EFFECT", chance_val
+    return _classify_sky_common(
+        wmo_code,
+        humidity,
+        temp,
+        rain_chance,
+        precip_mm=precip_mm,
+        hour_code=wmo_code,
+        is_live=False,
+    )
 
 
 # =========================================================
@@ -645,13 +793,13 @@ def get_indian_aqi_category(aqi):
         return "Unavailable"
     if val <= 50:
         return "Good"
-    elif val <= 100:
+    if val <= 100:
         return "Satisfactory"
-    elif val <= 200:
+    if val <= 200:
         return "Moderate"
-    elif val <= 300:
+    if val <= 300:
         return "Poor"
-    elif val <= 400:
+    if val <= 400:
         return "Very Poor"
     return "Severe"
 
@@ -663,13 +811,13 @@ def get_waqi_category(aqi):
         return "Unavailable"
     if val <= 50:
         return "Good"
-    elif val <= 100:
+    if val <= 100:
         return "Moderate"
-    elif val <= 150:
+    if val <= 150:
         return "Unhealthy for Sensitive Groups"
-    elif val <= 200:
+    if val <= 200:
         return "Unhealthy"
-    elif val <= 300:
+    if val <= 300:
         return "Very Unhealthy"
     return "Hazardous"
 
@@ -679,9 +827,9 @@ def get_aqi_visual_trigger(aqi):
     val = _valid_aqi_number(aqi)
     if val is None:
         return "AQI_UNAVAILABLE"
-    elif val > 150:
+    if val > 150:
         return "HEAVY_SMOG_EFFECT"
-    elif val > 50:
+    if val > 50:
         return "LIGHT_HAZE_EFFECT"
     return "CLEAN_AIR_EFFECT"
 
@@ -796,7 +944,7 @@ def calculate_indian_cpcb_aqi(pm25, pm10):
 # =========================================================
 
 def get_waqi_live_data(lat, lon):
-    """Fetches live AQI from WAQI using geo coordinates and CPCB sub-indices if available."""
+    """Fetches live AQI directly from WAQI using geo coordinates as first priority."""
     if not WAQI_API_TOKEN:
         return {"available": False}
 
@@ -820,15 +968,13 @@ def get_waqi_live_data(lat, lon):
 
         pm25_ugm3 = epa_aqi_to_ugm3("pm25", pm25_sub)
         pm10_ugm3 = epa_aqi_to_ugm3("pm10", pm10_sub)
-        cpcb_aqi = calculate_indian_cpcb_aqi(pm25_ugm3, pm10_ugm3)
 
         station = data.get("city", {})
-        used_cpcb = cpcb_aqi is not None
 
         return {
             "available": True,
-            "aqi": cpcb_aqi if used_cpcb else float(aqi_value),
-            "scale": "CPCB" if used_cpcb else "WAQI_RAW",
+            "aqi": float(aqi_value),
+            "scale": "WAQI",
             "pm25_ugm3": pm25_ugm3,
             "pm10_ugm3": pm10_ugm3,
             "station_name": station.get("name", "WAQI monitoring station"),
@@ -1145,8 +1291,14 @@ def predict_live_rainfall(location: str = "Kolkata"):
             and humidity < 85
             and "cloud" in accu_lower
         )
-        # Avoid overriding a clear/sunny/dry-cloud sky or high-rain-chance upgrade with a generic cloud label
-        if wmo_code in (51, 53, 55, 56, 57):
+        if _is_snow_condition(wmo_code, temp, precip_now, corrected_rain, hour_code=hour_code) or "snow" in accu_lower:
+            weather_label = (
+                "Heavy Snowfall"
+                if (_is_heavy_snow_code(wmo_code) or _is_heavy_snow_code(hour_code) or precip_now >= 3.0 or "heavy snow" in accu_lower)
+                else "Snowfall"
+            )
+            visual_trigger = "SNOW_EFFECT"
+        elif wmo_code in (51, 53, 55, 56, 57):
             weather_label = "Light Drizzle"
             visual_trigger = "RAIN_EFFECT"
         elif corrected_rain >= 55 and wmo_code not in (0, 1):
@@ -1160,32 +1312,41 @@ def predict_live_rainfall(location: str = "Kolkata"):
 
     raw_ai_pred, _, prediction_source = predict_rainfall_flag(temp, humidity, wind_speed, pressure)
     effective_rain_flag, ai_verdict = build_rainfall_verdict(
-        raw_ai_pred, wmo_code, corrected_rain, precip_now
+        raw_ai_pred, wmo_code, corrected_rain, precip_now, temp=temp, hour_code=hour_code
     )
 
-    if effective_rain_flag == 1 and corrected_rain < 55 and wmo_code not in (0, 1):
-        corrected_rain = max(corrected_rain, 60)
+    is_snow_active = _is_snow_condition(wmo_code, temp, precip_now, corrected_rain, hour_code=hour_code)
+    if is_snow_active:
+        weather_label = (
+            "Heavy Snowfall"
+            if (_is_heavy_snow_code(wmo_code) or _is_heavy_snow_code(hour_code) or precip_now >= 3.0)
+            else "Snowfall"
+        )
+        visual_trigger = "SNOW_EFFECT"
+    else:
+        if effective_rain_flag == 1 and corrected_rain < 55 and wmo_code not in (0, 1):
+            corrected_rain = max(corrected_rain, 60)
 
-    is_sunny_dry_sky = (wmo_code in (0, 1) and precip_now <= 0.05 and corrected_rain == 0)
-    is_wet_weather_code = (
-        precip_now > 0.1
-        or wmo_code in (51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99)
-        or hour_code in (51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99)
-    )
-    if not is_sunny_dry_sky and (is_wet_weather_code or (corrected_rain >= 55 and wmo_code not in (0, 1))):
-        if wmo_code in (51, 53, 55, 56, 57):
-            weather_label = "Light Drizzle"
-            visual_trigger = "RAIN_EFFECT"
-        elif weather_label in (
-            "Clear & Sunny",
-            "Mostly Sunny",
-            "Scattered Clouds",
-            "Partly Cloudy",
-            "Overcast & Dry",
-            "Overcast",
-        ):
-            weather_label = "Rainy" if (precip_now > 0.5 or corrected_rain >= 75) else "Passing Showers"
-            visual_trigger = "RAIN_EFFECT"
+        is_sunny_dry_sky = (wmo_code in (0, 1) and precip_now <= 0.05 and corrected_rain == 0)
+        is_wet_weather_code = (
+            precip_now > 0.1
+            or wmo_code in (51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99)
+            or hour_code in (51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99)
+        )
+        if not is_sunny_dry_sky and (is_wet_weather_code or (corrected_rain >= 55 and wmo_code not in (0, 1))):
+            if wmo_code in (51, 53, 55, 56, 57):
+                weather_label = "Light Drizzle"
+                visual_trigger = "RAIN_EFFECT"
+            elif weather_label in (
+                "Clear & Sunny",
+                "Mostly Sunny",
+                "Scattered Clouds",
+                "Partly Cloudy",
+                "Overcast & Dry",
+                "Overcast",
+            ):
+                weather_label = "Rainy" if (precip_now > 0.5 or corrected_rain >= 75) else "Passing Showers"
+                visual_trigger = "RAIN_EFFECT"
 
     wind_min = max(0.0, round(wind_speed - 2.0, 1))
     wind_max = round(wind_speed + 2.0, 1)
@@ -1208,7 +1369,10 @@ def predict_live_rainfall(location: str = "Kolkata"):
         d_code = _safe_int(daily_codes[i] if i < len(daily_codes) else None, 0)
         d_rain_raw = _safe_int(daily_rains[i] if i < len(daily_rains) else None, 0)
 
-        d_condition, _, d_rain = classify_weather_condition(d_code, humidity, d_max, d_rain_raw, 0)
+        d_condition, d_trigger, d_rain = classify_weather_condition(d_code, humidity, d_max, d_rain_raw, 0)
+        if _is_snow_condition(d_code, d_max, d_rain_raw * 0.25, d_rain_raw):
+            d_condition = "Heavy Snowfall" if (_is_heavy_snow_code(d_code) or d_rain_raw >= 75) else "Snowfall"
+            d_trigger = "SNOW_EFFECT"
         d_rmin, d_rmax, d_rdisp = _format_rain_range(d_rain)
         parsed_date = datetime.date.fromisoformat(date_string)
 
@@ -1216,6 +1380,7 @@ def predict_live_rainfall(location: str = "Kolkata"):
             "day_name": parsed_date.strftime("%a"),
             "date": date_string,
             "condition": d_condition,
+            "visual_trigger": d_trigger,
             "temp_range_c": {
                 "min": round(d_min, 1),
                 "max": round(d_max, 1),
@@ -1310,7 +1475,7 @@ def predict_live_rainfall(location: str = "Kolkata"):
 
 @app.get("/predict-aqi")
 def predict_live_aqi(location: str = "Kolkata"):
-    """Returns live AQI and near-term forecast using WAQI and Open-Meteo CAMS."""
+    """Returns live AQI and near-term forecast prioritizing WAQI live telemetry blended with Open-Meteo."""
     lat, lon, country, resolved_location = get_live_coordinates(location)
 
     live_aqi = None
@@ -1329,11 +1494,11 @@ def predict_live_aqi(location: str = "Kolkata"):
         live_pm25 = waqi.get("pm25_ugm3")
         live_pm10 = waqi.get("pm10_ugm3")
         source_used = "World Air Quality Index (WAQI)"
-        scale_used = waqi.get("scale", "CPCB")
+        scale_used = waqi.get("scale", "WAQI")
         station_name = waqi.get("station_name")
         measurement_time = waqi.get("measurement_time")
         dominant_pollutant = waqi.get("dominant_pollutant")
-        category = get_waqi_category(live_aqi) if scale_used == "WAQI_RAW" else get_indian_aqi_category(live_aqi)
+        category = get_waqi_category(live_aqi)
     else:
         cams = get_cams_live_aqi(lat, lon)
         if cams.get("available"):
@@ -1346,7 +1511,31 @@ def predict_live_aqi(location: str = "Kolkata"):
             category = get_indian_aqi_category(live_aqi)
 
     om_pred = get_open_meteo_aqi_prediction(lat, lon)
-    if om_pred.get("available"):
+    if live_aqi is not None and source_used == "World Air Quality Index (WAQI)":
+        base_live = round(live_aqi, 1)
+        om_next = _valid_aqi_number(om_pred.get("predicted_aqi_next_hour")) if om_pred.get("available") else None
+        om_today = _valid_aqi_number(om_pred.get("predicted_aqi_today")) if om_pred.get("available") else None
+        om_tomorrow = _valid_aqi_number(om_pred.get("predicted_aqi_tomorrow")) if om_pred.get("available") else None
+        if om_today is not None and om_today > 0:
+            prediction_source = "WAQI Live + Open-Meteo CAMS Forecast Blend"
+            if om_next is not None:
+                next_ratio = max(0.75, min(1.35, om_next / om_today))
+                predicted_next_hour = round(max(0.0, min(500.0, base_live * 0.7 + (base_live * next_ratio) * 0.3)), 1)
+            else:
+                predicted_next_hour = base_live
+            predicted_today = round(max(0.0, min(500.0, base_live * 0.65 + om_today * 0.35)), 1)
+            if om_tomorrow is not None:
+                om_ratio = max(0.65, min(1.5, om_tomorrow / om_today))
+                scaled_tmrw = base_live * om_ratio
+                predicted_tomorrow = round(max(0.0, min(500.0, scaled_tmrw * 0.65 + om_tomorrow * 0.35)), 1)
+            else:
+                predicted_tomorrow = predicted_today
+        else:
+            prediction_source = "WAQI Live Anchor + Atmospheric Trend"
+            predicted_next_hour = base_live
+            predicted_today = base_live
+            predicted_tomorrow = base_live
+    elif om_pred.get("available"):
         prediction_source = om_pred["source"]
         predicted_next_hour = _valid_aqi_number(om_pred.get("predicted_aqi_next_hour"))
         predicted_today = _valid_aqi_number(om_pred.get("predicted_aqi_today"))
@@ -1603,7 +1792,7 @@ def get_satellite_map(location: str = "Kolkata"):
 
 @app.get("/wrf-model-data")
 def get_wrf_model(location: str = "Kolkata"):
-    """Returns boundary-layer wind, pressure, stability, and 12-hour progression."""
+    """Returns boundary-layer wind shear, CAPE, pressure, stability, and real 12-hour NWP progression."""
     lat, lon, country, resolved_location = get_live_coordinates(location)
 
     try:
@@ -1613,41 +1802,118 @@ def get_wrf_model(location: str = "Kolkata"):
                 "latitude": lat,
                 "longitude": lon,
                 "current": (
-                    "temperature_2m,surface_pressure,"
+                    "temperature_2m,relative_humidity_2m,dew_point_2m,surface_pressure,"
                     "wind_speed_10m,wind_direction_10m,wind_gusts_10m"
                 ),
+                "hourly": (
+                    "temperature_2m,dew_point_2m,surface_pressure,cape,boundary_layer_height,"
+                    "wind_speed_10m,wind_speed_80m,wind_speed_120m,wind_direction_10m,wind_gusts_10m"
+                ),
+                "forecast_days": 2,
                 "timezone": "auto",
             },
             timeout=12,
         )
         current = weather.get("current", {})
+        hourly = weather.get("hourly", {})
     except requests.RequestException as exc:
         raise HTTPException(status_code=502, detail=f"Atmospheric model error: {exc}")
+
+    utc_offset = _safe_int(weather.get("utc_offset_seconds"), 0)
+    local_now = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=utc_offset)
+    cur_time_str = str(current.get("time") or local_now.strftime("%Y-%m-%dT%H:%M"))
+    cur_idx = get_current_hour_slice(hourly, cur_time_str)
+
+    def _h_val(key, idx, default_val):
+        arr = hourly.get(key) or []
+        if 0 <= idx < len(arr) and arr[idx] is not None:
+            return _safe_float(arr[idx], default_val)
+        return float(default_val)
+
+    temp_c = round(_safe_float(current.get("temperature_2m"), 26.0), 1)
+    dew_point_c = round(_safe_float(current.get("dew_point_2m"), _h_val("dew_point_2m", cur_idx, temp_c - 6.0)), 1)
+    dew_spread_c = round(max(0.0, temp_c - dew_point_c), 1)
 
     wind_speed = round(_safe_float(current.get("wind_speed_10m"), 5.5), 1)
     wind_dir = round(_safe_float(current.get("wind_direction_10m"), 140.0), 1)
     wind_gusts = round(_safe_float(current.get("wind_gusts_10m"), wind_speed + 3.0), 1)
     pressure = round(_safe_float(current.get("surface_pressure"), 1013.0), 1)
 
+    wind_80m = round(_h_val("wind_speed_80m", cur_idx, wind_speed * 1.28), 1)
+    wind_120m = round(_h_val("wind_speed_120m", cur_idx, wind_speed * 1.42), 1)
+    cape_jkg = round(_h_val("cape", cur_idx, 120.0), 0)
+    pbl_height_m = round(_h_val("boundary_layer_height", cur_idx, 850.0), 0)
+    shear_10_120 = round(max(0.0, wind_120m - wind_speed), 1)
+
+    ml_model_used = False
+    if wrf_ai:
+        try:
+            ml_pred = float(wrf_ai.predict([[temp_c, pressure, wind_speed, wind_dir]])[0])
+            if math.isfinite(ml_pred) and ml_pred > 0:
+                wind_gusts = round(max(wind_gusts, ml_pred), 1)
+                ml_model_used = True
+        except Exception:
+            pass
+
     gust_spread = round(max(0.0, wind_gusts - wind_speed), 1)
-    if wind_gusts >= 30.0 or gust_spread >= 15.0:
-        stability = "Severe Turbulent Gust Warning"
-    elif wind_speed >= 15.0 or gust_spread >= 8.0:
-        stability = "Moderate Atmospheric Turbulence"
+    if wind_gusts >= 30.0 or gust_spread >= 15.0 or cape_jkg >= 1500:
+        stability = "Severe Convective / Gust Warning"
+    elif wind_speed >= 15.0 or gust_spread >= 8.0 or cape_jkg >= 600:
+        stability = "Moderate Boundary-Layer Turbulence"
     else:
         stability = "Stable Laminar Flow"
 
     wind_min = round(max(0.0, wind_speed - 1.5), 1)
     wind_max = round(max(wind_speed + 1.5, wind_gusts), 1)
 
+    h_times = hourly.get("time") or []
+    progression_12h = []
+    for h_off in [0, 3, 6, 9, 12]:
+        s_idx = min(len(h_times) - 1, cur_idx + h_off) if h_times else -1
+        slot_time = str(h_times[s_idx]) if s_idx >= 0 else ""
+        slot_label = "Now" if h_off == 0 else (slot_time.split("T")[-1][:5] if "T" in slot_time else f"+{h_off}h")
+
+        w10 = round(_h_val("wind_speed_10m", s_idx, wind_speed), 1) if s_idx >= 0 else wind_speed
+        wg = round(max(w10 + 1.0, _h_val("wind_gusts_10m", s_idx, wind_gusts)), 1) if s_idx >= 0 else wind_gusts
+        w80 = round(_h_val("wind_speed_80m", s_idx, w10 * 1.28), 1) if s_idx >= 0 else wind_80m
+        w120 = round(_h_val("wind_speed_120m", s_idx, w10 * 1.42), 1) if s_idx >= 0 else wind_120m
+        p_mb = round(_h_val("surface_pressure", s_idx, pressure), 1) if s_idx >= 0 else pressure
+        c_val = round(_h_val("cape", s_idx, cape_jkg), 0) if s_idx >= 0 else cape_jkg
+        d_deg = round(_h_val("wind_direction_10m", s_idx, wind_dir), 0) if s_idx >= 0 else wind_dir
+
+        progression_12h.append({
+            "horizon_label": "Now" if h_off == 0 else f"+{h_off}h",
+            "local_clock": slot_label,
+            "hours_ahead": h_off,
+            "wind_speed_kmh": w10,
+            "wind_gusts_kmh": wg,
+            "wind_80m_kmh": w80,
+            "wind_120m_kmh": w120,
+            "surface_pressure_mb": p_mb,
+            "cape_jkg": c_val,
+            "wind_direction_degrees": d_deg,
+            "wind_direction_compass": degrees_to_compass(d_deg),
+        })
+
     return {
         "region": resolved_location.upper(),
         "country": country,
-        "numerical_model": "Open-Meteo ICON / GFS Seamless NWP",
+        "numerical_model": (
+            "Open-Meteo ICON/GFS NWP + WRF-RF Hybrid"
+            if ml_model_used
+            else "Open-Meteo ICON / GFS Seamless NWP"
+        ),
         "simulated_atmospheric_metrics": {
             "wind_speed_kmh": wind_speed,
             "wind_gusts_kmh": wind_gusts,
+            "wind_80m_kmh": wind_80m,
+            "wind_120m_kmh": wind_120m,
+            "wind_shear_10_120_kmh": shear_10_120,
             "surface_pressure_mb": pressure,
+            "dew_point_c": dew_point_c,
+            "dew_point_spread_c": dew_spread_c,
+            "cape_jkg": cape_jkg,
+            "boundary_layer_height_m": pbl_height_m,
             "wind_speed_range": {
                 "min": wind_min,
                 "max": wind_max,
@@ -1657,16 +1923,7 @@ def get_wrf_model(location: str = "Kolkata"):
             "wind_direction_compass": degrees_to_compass(wind_dir),
             "atmospheric_stability_index": stability,
         },
-        "progression_12h": [
-            {
-                "horizon_label": "Now" if h_off == 0 else f"+{h_off}h",
-                "hours_ahead": h_off,
-                "wind_speed_kmh": max(2.0, round(wind_speed + math.sin(idx * 1.15) * 2.2, 1)),
-                "wind_gusts_kmh": max(3.5, round(wind_gusts + math.sin(idx * 1.15) * 3.1, 1)),
-                "surface_pressure_mb": round(pressure - math.sin(idx * 1.15) * 0.8, 1),
-            }
-            for idx, h_off in enumerate([0, 3, 6, 12])
-        ],
+        "progression_12h": progression_12h,
     }
 
 
@@ -2139,7 +2396,7 @@ def health_check():
         "status": "EVS Climate AI backend is running",
         "rainfall_priority": "Open-Meteo Live Weather -> ML Model / Meteorological Fallback",
         "live_aqi_priority": ["WAQI (CPCB / Raw)", "Open-Meteo CAMS (CPCB)"],
-        "aqi_prediction_priority": ["Open-Meteo Forecast (CPCB Scale)", "Live Persistence Fallback"],
+        "aqi_prediction_priority": ["WAQI Live + Open-Meteo CAMS Forecast Blend", "Live Persistence Fallback"],
         "calendar_endpoint": "/calendar-forecast?location=Kolkata&year=2026&month=11&day=19",
         "waqi_token_configured": bool(WAQI_API_TOKEN),
         "accuweather_key_configured": bool(ACCUWEATHER_API_KEY),

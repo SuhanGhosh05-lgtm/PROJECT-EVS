@@ -66,6 +66,14 @@
       width: 100%;
       height: 100%;
       touch-action: none;
+      transform: translateY(14px) scale(0.76);
+      transform-origin: center center;
+    }
+
+    @media (min-width: 640px) {
+      #globe-container, #fallback-globe-canvas {
+        transform: translateY(10px) scale(0.78);
+      }
     }
 
     #weather-fg-canvas {
@@ -136,11 +144,19 @@
       gap: 4px;
     }
 
+    .top-hud.has-meteo-offline {
+      top: calc(max(6px, env(safe-area-inset-top)) + 20px);
+    }
+
     @media (min-width: 640px) {
       .top-hud {
         top: max(8px, env(safe-area-inset-top));
         width: min(980px, calc(100vw - 16px));
         gap: 4px;
+      }
+
+      .top-hud.has-meteo-offline {
+        top: calc(max(8px, env(safe-area-inset-top)) + 22px);
       }
     }
 
@@ -234,18 +250,30 @@
       opacity: 0;
       visibility: hidden;
       transform: translateY(18px) scale(0.985);
-      transition: opacity 0.45s ease, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.45s;
+      transition: opacity 0.45s ease, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.45s, padding-top 0.25s ease;
+    }
+
+    .top-hud.has-meteo-offline ~ #dashboard-view {
+      padding-top: calc(134px + env(safe-area-inset-top));
     }
 
     @media (min-width: 640px) {
       #dashboard-view {
         padding: calc(104px + env(safe-area-inset-top)) 16px calc(74px + env(safe-area-inset-bottom));
       }
+
+      .top-hud.has-meteo-offline ~ #dashboard-view {
+        padding-top: calc(126px + env(safe-area-inset-top));
+      }
     }
 
     @media (min-width: 768px) {
       #dashboard-view {
         padding: calc(114px + env(safe-area-inset-top)) 18px calc(88px + env(safe-area-inset-bottom));
+      }
+
+      .top-hud.has-meteo-offline ~ #dashboard-view {
+        padding-top: calc(136px + env(safe-area-inset-top));
       }
     }
 
@@ -430,10 +458,29 @@
       background: rgba(56, 189, 248, 0.25);
       border-color: rgba(56, 189, 248, 0.65);
     }
+
+    #runtime-error-toast {
+      position: fixed;
+      left: 50%;
+      bottom: 52px;
+      transform: translateX(-50%);
+      z-index: 60;
+      max-width: min(560px, calc(100vw - 20px));
+      padding: 8px 14px;
+      border-radius: 12px;
+      background: rgba(69, 10, 10, 0.94);
+      border: 1px solid rgba(248, 113, 113, 0.75);
+      color: #fecaca;
+      font-family: monospace;
+      font-size: 11px;
+      display: none;
+    }
   </style>
 </head>
 <body>
-  <!-- Background and foreground atmospheric canvas layers -->
+  <div id="runtime-error-toast"></div>
+
+  <!-- Background and foreground weather canvases -->
   <canvas id="weather-bg-canvas"></canvas>
 
   <div id="globe-layer">
@@ -443,7 +490,7 @@
 
   <canvas id="weather-fg-canvas"></canvas>
 
-  <!-- Floating city coordinate pin label above the 3D globe -->
+  <!-- Floating pin label for active city or coordinates on globe -->
   <div id="city-pointer-label">
     <div class="pointer-pill">
       <span class="pointer-dot"></span>
@@ -453,22 +500,28 @@
     <div class="pointer-stem"></div>
   </div>
 
-  <!-- Top navigation and search HUD -->
-  <header class="top-hud">
+  <!-- Top navigation & search bar -->
+  <header id="top-hud" class="top-hud">
     <div class="glass-bar px-2 py-1 sm:px-2.5 sm:py-1.5 flex items-center gap-1.5 sm:gap-2">
       <div class="flex items-center gap-1.5 sm:gap-2 pr-1.5 sm:pr-2 border-r border-white/10 shrink-0">
         <span class="w-2 h-2 rounded-full bg-sky-400 shadow-[0_0_10px_#38bdf8]"></span>
         <span class="font-extrabold text-xs sm:text-sm tracking-wide text-sky-100">Klima</span>
       </div>
 
-      <div class="relative flex-1 min-w-[105px]">
+      <div class="relative flex-1 min-w-[105px] flex items-center">
         <input
           id="city-input"
           type="text"
           placeholder="Search city or state..."
-          class="w-full bg-transparent text-xs text-white placeholder-slate-400 outline-none px-1 py-0.5"
+          class="w-full bg-transparent text-xs text-white placeholder-slate-400 outline-none px-1 py-0.5 pr-5"
           autocomplete="off"
         />
+        <button
+          id="clear-city-btn"
+          type="button"
+          aria-label="Clear search"
+          class="hidden text-slate-400 hover:text-white text-xs px-1 leading-none cursor-pointer"
+        >×</button>
         <div
           id="suggestions-dropdown"
           class="hidden absolute left-0 right-0 top-[calc(100%+8px)] rounded-xl bg-slate-950/95 border border-sky-400/25 shadow-2xl overflow-hidden z-40"
@@ -486,7 +539,6 @@
         <button id="reconnect-btn" type="button" class="nav-pill px-2 py-0.5 text-[10.5px] sm:text-[11px]" title="Reconnect to FastAPI Backend">🔌 <span class="hidden sm:inline">Sync</span></button>
         <button id="search-btn" type="button" class="nav-pill bg-sky-500/20 border-sky-400/40 text-sky-100 px-2 py-0.5 text-[10.5px] sm:text-[11px]">Zoom</button>
         <button id="sun-toggle-btn" type="button" class="nav-pill border-amber-400/40 text-amber-200 px-2 py-0.5 text-[10.5px] sm:text-[11px]" title="Toggle between Contrasted Solar Mode and Classic Mode">☀️ <span class="hidden md:inline">Sun: Contrasted</span></button>
-        <button id="spin-boost-btn" type="button" class="hidden sm:inline-flex nav-pill px-2 py-0.5 text-[11px]">🌀 Spin</button>
         <button id="globe-view-btn" type="button" class="nav-pill px-2 py-0.5 text-[10.5px] sm:text-[11px]" title="Return to 3D Globe">🌍 <span class="hidden sm:inline">Globe</span></button>
       </div>
     </div>
@@ -503,17 +555,18 @@
       </div>
 
       <div class="flex items-center gap-1 self-start sm:self-auto">
-        <span id="backend-status" class="glass-bar px-2 py-0.5 text-[9.5px] sm:text-[10px] leading-tight font-mono text-amber-300">Backend: Checking...</span>
-        <span id="backend-latency" class="glass-bar px-1.5 py-0.5 text-[9.5px] sm:text-[10px] leading-tight font-mono text-slate-300">-- ms</span>
-        <span id="coord-hud" class="hidden md:inline-block glass-bar px-2 py-0.5 text-[10px] leading-tight font-mono text-sky-300">LAT 22.57°N · LON 88.36°E</span>
+        <span id="backend-status" class="glass-bar px-1.5 py-0.5 text-[9px] sm:text-[9.5px] leading-none font-mono text-amber-300 max-w-[175px] sm:max-w-[220px] truncate">API: Checking...</span>
+        <span id="backend-latency" class="glass-bar px-1.5 py-0.5 text-[9px] sm:text-[9.5px] leading-none font-mono text-slate-300">-- ms</span>
+        <span id="meteo-offline-pill" class="hidden px-1.5 py-0.5 rounded-md text-[9px] sm:text-[9.5px] leading-none font-mono font-bold text-rose-200 bg-rose-950/90 border border-rose-500/75">#offline</span>
+        <span id="coord-hud" class="hidden md:inline-block glass-bar px-2 py-0.5 text-[9.5px] leading-none font-mono text-sky-300">LAT 22.57°N · LON 88.36°E</span>
       </div>
     </div>
   </header>
 
-  <!-- Main multi-tab climate dashboard -->
+  <!-- Dashboard overlay -->
   <main id="dashboard-view">
     <div class="max-w-6xl mx-auto space-y-3 sm:space-y-4">
-      <div id="app-notice" class="hidden glass-card px-2.5 py-1 text-[10.5px] leading-tight text-amber-200 border-amber-400/40"></div>
+      <div id="app-notice" class="hidden"></div>
       <div id="accu-alert-banner" class="hidden glass-card px-3 py-2 text-xs text-amber-100 border-amber-400/50 bg-amber-950/35"></div>
 
       <section class="glass-card p-3.5 sm:p-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2.5 sm:gap-3">
@@ -593,7 +646,7 @@
               </div>
               <div class="p-3 rounded-xl bg-sky-500/10 border border-sky-400/35 flex flex-col justify-between">
                 <div>
-                  <span class="text-sky-200 font-semibold block">🔮 AI Rain Forecast</span>
+                  <span class="text-sky-200 font-semibold block">🔮 AI Precip Forecast</span>
                   <span id="ov-rain" class="text-xl font-extrabold text-sky-300 mt-0.5 block">--%</span>
                   <span id="ov-rain-verdict" class="text-[11px] text-sky-200 block mt-0.5">--</span>
                 </div>
@@ -607,8 +660,8 @@
           <div class="prediction-card p-4 sm:p-5 lg:col-span-2">
             <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
               <div>
-                <p class="text-sm sm:text-base uppercase tracking-wider text-sky-300 font-extrabold">7-Day Temperature &amp; Rain Forecast</p>
-                <p class="text-[11px] sm:text-xs text-slate-300/80 mt-0.5">Smooth daily high/low thermal envelope &amp; precipitation outlook</p>
+                <p class="text-sm sm:text-base uppercase tracking-wider text-sky-300 font-extrabold">7-Day Temperature &amp; Precip Forecast</p>
+                <p class="text-[11px] sm:text-xs text-slate-300/80 mt-0.5">Smooth daily high/low thermal envelope &amp; precipitation/snowfall outlook</p>
               </div>
               <div class="flex items-center gap-3 text-[11px] font-semibold">
                 <span class="flex items-center gap-1.5 text-sky-300"><span class="w-2.5 h-0.5 bg-sky-400 inline-block rounded"></span>High °C</span>
@@ -714,7 +767,7 @@
         <div class="glass-card p-4 sm:p-6">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <h2 class="text-lg sm:text-xl font-extrabold text-white">1. Rainfall &amp; Live Meteorological Telemetry</h2>
+              <h2 class="text-lg sm:text-xl font-extrabold text-white">1. Rainfall, Snowfall &amp; Live Meteorological Telemetry</h2>
               <p class="text-xs text-slate-400 mt-1">Real-time surface observations and hourly precipitation outlook</p>
             </div>
           </div>
@@ -820,19 +873,20 @@
         <div class="glass-card p-4 sm:p-6 space-y-4">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <h2 class="text-lg sm:text-xl font-extrabold text-white">5. WRF Numerical Weather &amp; Turbulence Simulation</h2>
-              <p class="text-xs text-slate-400 mt-1">Boundary-layer wind gusts, surface pressure, laminar vs. turbulent flow, and 12-hour progression</p>
+              <h2 class="text-lg sm:text-xl font-extrabold text-white">5. WRF Numerical Weather &amp; Boundary-Layer Simulation</h2>
+              <p id="wrf-model-subtitle" class="text-xs text-slate-400 mt-1">Multi-altitude wind shear (10m–120m), convective CAPE, pressure tendency &amp; 12-hour NWP progression</p>
             </div>
-            <span class="prediction-badge">🔮 NWP Simulation</span>
+            <span id="wrf-model-badge" class="prediction-badge">🔮 ICON / GFS NWP</span>
           </div>
           <div id="sub-wrf-content" class="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 text-sm"></div>
+          <div id="sub-wrf-shear-panel" class="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4"></div>
           <div id="sub-wrf-progression" class="pt-4 border-t border-white/10"></div>
         </div>
       </section>
     </div>
   </main>
 
-  <!-- Bottom visual weather/atmosphere effect switcher -->
+  <!-- Bottom visual weather switcher -->
   <footer class="bottom-fx-bar glass-bar">
     <button type="button" class="fx-chip active" data-fx="auto">✨ Auto</button>
     <button type="button" class="fx-chip" data-fx="space">🌌 Space</button>
@@ -848,6 +902,21 @@
 
   <script>
     (function () {
+      function showRuntimeToast(msg) {
+        try {
+          const toast = document.getElementById('runtime-error-toast');
+          if (!toast) return;
+          toast.textContent = `Klima Notice: ${msg}`;
+          toast.style.display = 'block';
+        } catch (_) {}
+      }
+
+      window.addEventListener('error', (event) => {
+        if (event && event.message) {
+          showRuntimeToast(event.message);
+        }
+      });
+
       const DEFAULT_BACKEND_URL = (window.location.origin && /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/i.test(window.location.origin))
         ? window.location.origin
         : 'http://127.0.0.1:8000';
@@ -857,9 +926,6 @@
       let selectedCityLocalHour = null;
       let selectedCityIsDay = null;
 
-      /**
-       * Extracts hour (0-23) from an ISO-like local timestamp string (e.g. "2026-11-23T11:30").
-       */
       function parseLocalHourFromIso(isoStr) {
         if (!isoStr || typeof isoStr !== 'string') return null;
         const tIdx = isoStr.indexOf('T');
@@ -868,9 +934,6 @@
         return Number.isFinite(hr) && hr >= 0 && hr <= 23 ? hr : null;
       }
 
-      /**
-       * Estimates local hour (0-23) from longitude when no timestamp is available yet.
-       */
       function estimateHourFromLongitude(lon) {
         const utcNow = new Date();
         const utcHours = utcNow.getUTCHours() + utcNow.getUTCMinutes() / 60;
@@ -878,9 +941,6 @@
         return Math.floor((((utcHours + offsetHours) % 24) + 24) % 24);
       }
 
-      /**
-       * Returns the active hour (0-23) for the selected city, honoring any manual preview override.
-       */
       function getEffectiveHour24() {
         if (previewNightHour !== null && !Number.isNaN(Number(previewNightHour))) {
           return ((Number(previewNightHour) % 24) + 24) % 24;
@@ -894,9 +954,6 @@
         return new Date().getHours();
       }
 
-      /**
-       * Returns true during evening/night hours (18:00 through 05:59) in the selected city's local time.
-       */
       function isNightHour24(hour24 = null) {
         if (hour24 === null && previewNightHour === null && typeof selectedCityIsDay === 'boolean') {
           if (selectedCityLocalHour === 6) return false;
@@ -906,9 +963,6 @@
         return h >= 18 || h < 6;
       }
 
-      /**
-       * Formats a local time string (e.g. "2026-11-23T02:32") or hour24 into a readable local clock string.
-       */
       function formatPlaceLocalClock(isoOrHour) {
         if (typeof isoOrHour === 'string' && isoOrHour.includes('T')) {
           const parts = isoOrHour.split('T');
@@ -930,9 +984,6 @@
         syncEffectForCurrentPage();
       };
 
-      /**
-       * Computes responsive camera distances based on viewport aspect ratio.
-       */
       function getResponsiveGlobeDistances() {
         const w = window.innerWidth;
         const h = window.innerHeight;
@@ -942,9 +993,6 @@
         return { restDist: 7.4, zoomDist: 3.7 };
       }
 
-      /**
-       * Reads and normalizes the configured backend URL.
-       */
       function getBackendBaseUrl() {
         const input = document.getElementById('backend-url-input');
         const raw = (input && input.value ? input.value : backendBaseUrl || DEFAULT_BACKEND_URL).trim();
@@ -952,31 +1000,36 @@
         return backendBaseUrl;
       }
 
-      /**
-       * Updates backend connection status, latency, and API route text.
-       */
-      function updateBackendIndicators(connected, latencyMs = null, detailText = '') {
+      function updateBackendIndicators(connected, latencyMs = null) {
         const statusEl = document.getElementById('backend-status');
         const latencyEl = document.getElementById('backend-latency');
+        const offlinePill = document.getElementById('meteo-offline-pill');
         const hostLabel = getBackendBaseUrl().replace(/^https?:\/\//, '');
 
         if (statusEl) {
           if (connected) {
-            statusEl.textContent = `Backend: Connected (${hostLabel})`;
-            statusEl.className = 'glass-bar px-2 py-0.5 text-[9.5px] sm:text-[10px] leading-tight font-mono text-emerald-300';
+            statusEl.textContent = `API: ${hostLabel}`;
+            statusEl.className = 'glass-bar px-1.5 py-0.5 text-[9px] sm:text-[9.5px] leading-none font-mono text-emerald-300 max-w-[175px] sm:max-w-[220px] truncate';
           } else {
-            statusEl.textContent = 'Backend: Offline (Open-Meteo Fallback)';
-            statusEl.className = 'glass-bar px-2 py-0.5 text-[9.5px] sm:text-[10px] leading-tight font-mono text-amber-300';
+            statusEl.textContent = 'API: Offline';
+            statusEl.className = 'glass-bar px-1.5 py-0.5 text-[9px] sm:text-[9.5px] leading-none font-mono text-amber-300 max-w-[175px] sm:max-w-[220px] truncate';
           }
         }
         if (latencyEl) {
           latencyEl.textContent = connected && latencyMs != null ? `${Math.round(latencyMs)} ms` : '-- ms';
         }
+        if (offlinePill) {
+          offlinePill.classList.toggle('hidden', Boolean(connected));
+        }
       }
 
-      /**
-       * Displays or clears an inline notice banner inside the dashboard.
-       */
+      function setMeteoOfflineBadge(show) {
+        const offlinePill = document.getElementById('meteo-offline-pill');
+        const topHud = document.getElementById('top-hud');
+        if (offlinePill) offlinePill.classList.toggle('hidden', !show);
+        if (topHud) topHud.classList.toggle('has-meteo-offline', Boolean(show));
+      }
+
       function showNotice(msg, isError = false) {
         const el = document.getElementById('app-notice');
         if (!el) return;
@@ -992,15 +1045,10 @@
         el.className = isError
           ? 'glass-card px-2.5 py-1 text-[10.5px] leading-tight text-rose-200 border-rose-400/50 bg-rose-950/40'
           : 'glass-card px-2.5 py-1 text-[10.5px] leading-tight text-sky-200 border-sky-400/40 bg-sky-950/40';
-        if (isScrolled) {
-          el.classList.add('scrolled-compact');
-        }
+        if (isScrolled) el.classList.add('scrolled-compact');
         el.classList.remove('hidden');
       }
 
-      /**
-       * Renders AccuWeather MinuteCast timing and severe weather alerts when present.
-       */
       function renderAccuweatherAlertsBanner(accuData) {
         const el = document.getElementById('accu-alert-banner');
         if (!el) return;
@@ -1029,9 +1077,6 @@
         el.classList.remove('hidden');
       }
 
-      /**
-       * Fetches JSON from the backend with timeout and error handling.
-       */
       async function fetchBackendJson(pathAndQuery, timeoutMs = 15000) {
         const base = getBackendBaseUrl();
         const controller = new AbortController();
@@ -1046,8 +1091,7 @@
           const elapsed = performance.now() - t0;
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           const json = await res.json();
-          const placeClock = formatPlaceLocalClock(json?.observed_at || '');
-          updateBackendIndicators(true, elapsed, `Synced ${placeClock}`);
+          updateBackendIndicators(true, elapsed);
           return json;
         } catch (err) {
           if (err && err.name === 'AbortError') {
@@ -1059,15 +1103,12 @@
         }
       }
 
-      /**
-       * Probes the backend /health endpoint on startup or reconnect.
-       */
       async function probeBackendHealth() {
         try {
           await fetchBackendJson('/health', 6000);
           return true;
         } catch (err) {
-          updateBackendIndicators(false, null, err.message);
+          updateBackendIndicators(false, null);
           return false;
         }
       }
@@ -1177,9 +1218,6 @@
         return val;
       }
 
-      /**
-       * Generates procedural planetary color, bump, specular, and cloud textures.
-       */
       function createRealisticEarthTextures() {
         const w = 512, h = 256;
         const colorCanvas = document.createElement('canvas');
@@ -1287,9 +1325,6 @@
         };
       }
 
-      /**
-       * Initializes Three.js globe or switches cleanly to the 2D canvas fallback.
-       */
       function initGlobe() {
         const container = document.getElementById('globe-container');
         const fallbackCanvas = document.getElementById('fallback-globe-canvas');
@@ -1491,9 +1526,6 @@
         }
       }
 
-      /**
-       * Attaches pointer drag, pinch zoom, and wheel zoom handlers to the globe.
-       */
       function attachPointerControls(el) {
         el.addEventListener('pointerdown', (e) => {
           activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -1814,9 +1846,6 @@
 
       let rainDrops = [], snowFlakes = [], motes = [], cloudPuffs = [], smokePlumes = [], nightStars = [];
 
-      /**
-       * Resizes background/foreground canvases and camera on viewport changes.
-       */
       function resizeCanvases() {
         const w = window.innerWidth, h = window.innerHeight;
         bgCanvas.width = fgCanvas.width = w;
@@ -1841,7 +1870,7 @@
           len: 12 + Math.random() * 20, speed: 11 + Math.random() * 13,
           alpha: 0.25 + Math.random() * 0.4
         }));
-        snowFlakes = Array.from({ length: isMobile ? 100 : 160 }, () => ({
+        snowFlakes = Array.from({ length: isMobile ? 110 : 180 }, () => ({
           x: Math.random() * w, y: Math.random() * h,
           r: 1.5 + Math.random() * 3.5, speed: 0.8 + Math.random() * 2,
           drift: Math.random() * Math.PI * 2, alpha: 0.5 + Math.random() * 0.45
@@ -1875,15 +1904,25 @@
 
       function spawnLightning() {
         const w = bgCanvas.width, h = bgCanvas.height;
-        let x = w * (0.2 + Math.random() * 0.6), y = 0;
+        let x = w * (0.18 + Math.random() * 0.64), y = 0;
         const segs = [];
-        while (y < h * 0.72) {
-          const nx = x + (Math.random() - 0.5) * 70;
-          const ny = y + 24 + Math.random() * 42;
+        const branches = [];
+        while (y < h * 0.78) {
+          const nx = x + (Math.random() - 0.5) * 76;
+          const ny = y + 22 + Math.random() * 40;
           segs.push({ x1: x, y1: y, x2: nx, y2: ny });
+          if (Math.random() < 0.34 && y > h * 0.12 && y < h * 0.58) {
+            let bx = nx, by = ny;
+            for (let b = 0; b < 3; b++) {
+              const nbx = bx + (Math.random() - 0.5) * 65;
+              const nby = by + 18 + Math.random() * 28;
+              branches.push({ x1: bx, y1: by, x2: nbx, y2: nby });
+              bx = nbx; by = nby;
+            }
+          }
           x = nx; y = ny;
         }
-        lightningBolts.push({ segs, life: 1 });
+        lightningBolts.push({ segs, branches, life: 1 });
         lightningFlash = 1;
       }
 
@@ -1988,9 +2027,6 @@
         }
       }
 
-      /**
-       * Renders a pitch-black night sky with stars and optional light clouds after sunset.
-       */
       function drawClearNightCanvas(w, h, t, withLightClouds = false) {
         bgCtx.fillStyle = '#000000';
         bgCtx.fillRect(0, 0, w, h);
@@ -2152,36 +2188,53 @@
           }
 
           if (isThunder) {
-            if (Math.random() < 0.015) spawnLightning();
+            if (Math.random() < 0.032) spawnLightning();
             if (lightningFlash > 0.02) {
-              bgCtx.fillStyle = `rgba(224, 242, 254, ${lightningFlash * 0.25})`;
+              bgCtx.fillStyle = `rgba(224, 242, 254, ${lightningFlash * 0.34})`;
               bgCtx.fillRect(0, 0, w, h);
-              if (lightningLight) lightningLight.intensity = lightningFlash * 4;
-              lightningFlash *= 0.85;
+              fgCtx.fillStyle = `rgba(186, 230, 253, ${lightningFlash * 0.12})`;
+              fgCtx.fillRect(0, 0, w, h);
+              if (lightningLight) lightningLight.intensity = lightningFlash * 5.0;
+              lightningFlash *= 0.84;
             } else if (lightningLight) {
               lightningLight.intensity = 0;
             }
 
             lightningBolts = lightningBolts.filter((b) => b.life > 0.05);
             lightningBolts.forEach((b) => {
-              bgCtx.strokeStyle = `rgba(224, 242, 254, ${b.life})`;
-              bgCtx.lineWidth = 2.5;
-              b.segs.forEach((s) => {
-                bgCtx.beginPath();
-                bgCtx.moveTo(s.x1, s.y1);
-                bgCtx.lineTo(s.x2, s.y2);
-                bgCtx.stroke();
+              [bgCtx, fgCtx].forEach((ctxLayer, idx) => {
+                ctxLayer.save();
+                ctxLayer.shadowColor = '#7dd3fc';
+                ctxLayer.shadowBlur = idx === 0 ? 18 : 12;
+                ctxLayer.strokeStyle = idx === 0
+                  ? `rgba(240, 249, 255, ${b.life})`
+                  : `rgba(186, 230, 253, ${b.life * 0.55})`;
+                ctxLayer.lineWidth = idx === 0 ? 3.0 : 1.8;
+                b.segs.forEach((s) => {
+                  ctxLayer.beginPath();
+                  ctxLayer.moveTo(s.x1, s.y1);
+                  ctxLayer.lineTo(s.x2, s.y2);
+                  ctxLayer.stroke();
+                });
+                ctxLayer.lineWidth = idx === 0 ? 1.6 : 1.0;
+                (b.branches || []).forEach((br) => {
+                  ctxLayer.beginPath();
+                  ctxLayer.moveTo(br.x1, br.y1);
+                  ctxLayer.lineTo(br.x2, br.y2);
+                  ctxLayer.stroke();
+                });
+                ctxLayer.restore();
               });
-              b.life *= 0.84;
+              b.life *= 0.83;
             });
           }
 
-          const wind = isThunder ? -5 : -2.4;
+          const wind = isThunder ? -5.5 : -2.4;
           fgCtx.strokeStyle = 'rgba(186, 230, 253, 0.5)';
           fgCtx.lineWidth = 1.2;
           rainDrops.forEach((d) => {
             d.x += wind;
-            d.y += d.speed * (isThunder ? 1.3 : 1);
+            d.y += d.speed * (isThunder ? 1.35 : 1);
             if (d.y > h) { d.y = -20; d.x = Math.random() * (w + 100); }
             if (d.x < -20) d.x = w + 20;
             fgCtx.globalAlpha = d.alpha;
@@ -2195,11 +2248,15 @@
         }
 
         if (activeFx === 'snow') {
+          const codeNow = Number(latestTelemetry?.wmoCode ?? 71);
+          const isHeavySnowNow = codeNow === 75 || codeNow === 86 || /heavy snow/i.test(String(latestTelemetry?.weatherConditionLabel || ''));
           const isActiveSnowfallNow = Boolean(
             latestTelemetry &&
             (
-              (Number(latestTelemetry.wmoCode) >= 71 && Number(latestTelemetry.wmoCode) <= 77) ||
-              /\bsnowfall\b|\bheavy snow\b/i.test(String(latestTelemetry.weatherConditionLabel || ''))
+              (codeNow >= 71 && codeNow <= 77) ||
+              codeNow === 85 ||
+              codeNow === 86 ||
+              /\bsnow/i.test(String(latestTelemetry.weatherConditionLabel || ''))
             )
           );
           const subZeroColdNow = Boolean(
@@ -2207,54 +2264,29 @@
             Number(latestTelemetry.temp) < 0 &&
             !isActiveSnowfallNow
           );
-          if (subZeroColdNow && !isNight) {
-            const fogGrad = bgCtx.createLinearGradient(0, 0, 0, h);
-            fogGrad.addColorStop(0, '#1e293b');
-            fogGrad.addColorStop(0.55, '#334155');
-            fogGrad.addColorStop(1, '#1e1b18');
-            bgCtx.fillStyle = fogGrad;
-            bgCtx.fillRect(0, 0, w, h);
 
-            smokePlumes.forEach((p, i) => {
-              if (i % 2 !== 0) return;
-              p.x += p.vx * 0.65;
-              p.y += Math.sin(t * 0.4 + p.phase) * 0.15;
-              if (p.x - p.r > w) p.x = -p.r;
-              const fg = fgCtx.createRadialGradient(p.x, p.y, 12, p.x, p.y, p.r * 1.15);
-              fg.addColorStop(0, 'rgba(203, 213, 225, 0.14)');
-              fg.addColorStop(0.6, 'rgba(148, 163, 184, 0.07)');
-              fg.addColorStop(1, 'rgba(148, 163, 184, 0)');
-              fgCtx.fillStyle = fg;
-              fgCtx.beginPath();
-              fgCtx.arc(p.x, p.y, p.r * 1.15, 0, Math.PI * 2);
-              fgCtx.fill();
-            });
+          const g = bgCtx.createLinearGradient(0, 0, 0, h);
+          if (isNight) {
+            g.addColorStop(0, '#040914');
+            g.addColorStop(0.55, '#0b192e');
+            g.addColorStop(1, '#030710');
           } else {
-            const g = bgCtx.createLinearGradient(0, 0, 0, h);
-            if (isNight) {
-              g.addColorStop(0, '#040914');
-              g.addColorStop(0.55, '#0b192e');
-              g.addColorStop(1, '#030710');
-            } else {
-              g.addColorStop(0, '#09162b');
-              g.addColorStop(0.55, '#132847');
-              g.addColorStop(1, '#081324');
-            }
-            bgCtx.fillStyle = g;
-            bgCtx.fillRect(0, 0, w, h);
+            g.addColorStop(0, isHeavySnowNow ? '#0c1e3a' : '#09162b');
+            g.addColorStop(0.55, isHeavySnowNow ? '#19355e' : '#132847');
+            g.addColorStop(1, '#081324');
           }
+          bgCtx.fillStyle = g;
+          bgCtx.fillRect(0, 0, w, h);
 
-          const flakeRatio = isActiveSnowfallNow ? 1.0 : (subZeroColdNow ? 0.35 : 0.75);
+          const flakeRatio = isHeavySnowNow ? 1.0 : (isActiveSnowfallNow ? 0.9 : (subZeroColdNow ? 0.35 : 0.75));
           const flakesToDraw = snowFlakes.slice(0, Math.max(24, Math.floor(snowFlakes.length * flakeRatio)));
           flakesToDraw.forEach((s) => {
-            const speedMult = isActiveSnowfallNow ? 1.45 : (subZeroColdNow ? 0.7 : 1.0);
+            const speedMult = isHeavySnowNow ? 1.65 : (isActiveSnowfallNow ? 1.35 : 0.7);
             s.y += s.speed * speedMult;
-            s.x += Math.sin(t * 1.3 + s.drift) * (isActiveSnowfallNow ? 1.35 : 0.75);
+            s.x += Math.sin(t * 1.3 + s.drift) * (isHeavySnowNow ? 1.55 : 0.95);
             if (s.y > h + 8) { s.y = -8; s.x = Math.random() * w; }
-            const radiusMult = isActiveSnowfallNow ? 1.25 : (subZeroColdNow ? 0.78 : 1.0);
-            const alphaVal = isActiveSnowfallNow
-              ? Math.min(0.98, s.alpha * 1.15)
-              : (subZeroColdNow ? s.alpha * (isNight ? 0.72 : 0.58) : s.alpha);
+            const radiusMult = isHeavySnowNow ? 1.35 : (isActiveSnowfallNow ? 1.15 : 0.8);
+            const alphaVal = isHeavySnowNow ? Math.min(0.98, s.alpha * 1.2) : (isActiveSnowfallNow ? s.alpha : s.alpha * 0.65);
             fgCtx.fillStyle = `rgba(240, 249, 255, ${alphaVal})`;
             fgCtx.beginPath();
             fgCtx.arc(s.x, s.y, s.r * radiusMult, 0, Math.PI * 2);
@@ -2369,30 +2401,79 @@
         }
       }
 
+      function isSnowCondition(code, tempC = null, precipMm = 0, rainProb = 0, condLabel = '') {
+        const c = Number(code);
+        if (c >= 95 && !String(condLabel || '').toLowerCase().includes('snow')) return false;
+        const tVal = tempC == null || Number.isNaN(Number(tempC)) ? null : Number(tempC);
+        const pVal = Number(precipMm || 0);
+        const rVal = Number(rainProb || 0);
+        const lbl = String(condLabel || '').toLowerCase();
+        if (lbl.includes('thunder') || lbl.includes('storm')) return false;
+        const isSwissOrAlpine = /switzerland|swiss|bern|zurich|geneva|basel|lausanne|lucerne|interlaken|zermatt|st\.?\s*moritz|davos|chur|valais|graubunden|alps/i.test(
+          `${selectedCity?.name || ''} ${selectedCity?.country || ''}`
+        );
+        const snowTempLimit = isSwissOrAlpine ? 4.5 : 3.0;
+        if (lbl.includes('snow')) return true;
+        if ((c >= 71 && c <= 77) || c === 85 || c === 86) return true;
+        if (tVal !== null && tVal <= snowTempLimit && (pVal > 0.05 || rVal >= 25 || c >= 51)) return true;
+        if (isSwissOrAlpine && (pVal > 0.05 || rVal >= 35 || (c >= 51 && c <= 82))) return true;
+        return false;
+      }
+
+      function isThunderCondition(code, condLabel = '', rainProb = 0, precipMm = 0, tempC = null) {
+        const c = Number(code);
+        const lbl = String(condLabel || '').toLowerCase();
+        const rVal = Number(rainProb || 0);
+        const pVal = Number(precipMm || 0);
+        if (
+          lbl.includes('snow') ||
+          c === 71 || c === 73 || c === 75 || c === 77 || c === 85 || c === 86 ||
+          isSnowCondition(c, tempC, pVal, rVal, lbl)
+        ) {
+          return false;
+        }
+        return (
+          lbl.includes('thunder') ||
+          lbl.includes('storm') ||
+          c >= 95 ||
+          c === 82 ||
+          pVal >= 5.0 ||
+          rVal >= 85
+        );
+      }
+
       function getWmoMeta(code, hour24 = null) {
         const night = isNightHour24(hour24);
-        if (code === 0) {
+        const c = Number(code);
+        if (c >= 95) {
+          return { label: 'Thunderstorm', icon: '⛈️', fx: 'thunder' };
+        }
+        if (c === 75 || c === 86) {
+          return { label: 'Heavy Snowfall', icon: '❄️', fx: 'snow' };
+        }
+        if ((c >= 71 && c <= 77) || c === 85) {
+          return { label: 'Snowfall', icon: '❄️', fx: 'snow' };
+        }
+        if (c === 0) {
           return night
             ? { label: 'Clear Night', icon: '🌙', fx: 'sunny' }
             : { label: 'Clear & Sunny', icon: '☀️', fx: 'sunny' };
         }
-        if (code === 1) {
+        if (c === 1) {
           return night
             ? { label: 'Mostly Clear Night', icon: '🌙', fx: 'sunny' }
             : { label: 'Mostly Sunny', icon: '🌤️', fx: 'sunny' };
         }
-        if (code === 2) {
+        if (c === 2) {
           return night
             ? { label: 'Scattered Clouds', icon: '🌥️', fx: 'partlysunny' }
             : { label: 'Scattered Clouds', icon: '⛅', fx: 'partlysunny' };
         }
-        if (code === 3) return { label: 'Overcast & Dry', icon: '☁️', fx: 'cloudy' };
-        if (code === 45 || code === 48) return { label: 'Foggy / Hazy', icon: '🌫️', fx: 'fog' };
-        if (code >= 51 && code <= 57) return { label: 'Light Drizzle', icon: '🌦️', fx: 'rain' };
-        if (code >= 61 && code <= 67) return { label: 'Rainy', icon: '🌧️', fx: 'rain' };
-        if (code >= 71 && code <= 77) return { label: 'Snowfall', icon: '❄️', fx: 'snow' };
-        if (code >= 80 && code <= 82) return { label: 'Passing Showers', icon: '🌦️', fx: 'rain' };
-        if (code >= 95) return { label: 'Thunderstorm', icon: '⛈️', fx: 'thunder' };
+        if (c === 3) return { label: 'Overcast & Dry', icon: '☁️', fx: 'cloudy' };
+        if (c === 45 || c === 48) return { label: 'Foggy / Hazy', icon: '🌫️', fx: 'fog' };
+        if (c >= 51 && c <= 57) return { label: 'Light Drizzle', icon: '🌦️', fx: 'rain' };
+        if (c >= 61 && c <= 67) return { label: 'Rainy', icon: '🌧️', fx: 'rain' };
+        if (c >= 80 && c <= 82) return { label: 'Passing Showers', icon: '🌦️', fx: 'rain' };
         return { label: 'Overcast', icon: '☁️', fx: 'cloudy' };
       }
 
@@ -2411,9 +2492,9 @@
 
       function mapBackendTriggerToFx(trigger, fallbackFx) {
         const t = String(trigger || '').toUpperCase();
-        if (t.includes('RAIN')) return 'rain';
         if (t.includes('THUNDER')) return 'thunder';
         if (t.includes('SNOW')) return 'snow';
+        if (t.includes('RAIN')) return 'rain';
         if (t.includes('SMOG') || t.includes('HEAVY_SMOG')) return 'aqi';
         if (t.includes('FOG') || t.includes('LIGHT_HAZE')) return 'fog';
         if (t.includes('CLOUD')) return 'cloudy';
@@ -2422,16 +2503,57 @@
       }
 
       /**
-       * Normalizes rain probability so dry skies suppress minor forecast noise.
+       * Resolves the single authoritative weather effect ('thunder', 'snow', 'fog', 'rain',
+       * 'sunny', 'partlysunny', 'cloudy') from weather code, label, temperature, and rain chance.
        */
-      function normalizeFrontendRain(wmoCode, rawChance, hasZeroPrecip = false, hourCode = null) {
+      function resolveWeatherFx({ wmoCode, condLabel = '', tempC = null, rainChance = 0, trigger = '' }) {
+        const trigFx = mapBackendTriggerToFx(trigger, '');
+        if (trigFx === 'thunder' || isThunderCondition(wmoCode, condLabel, rainChance, 0)) {
+          return 'thunder';
+        }
+        if (trigFx === 'snow' || isSnowCondition(wmoCode, tempC, 0, rainChance, condLabel)) {
+          return 'snow';
+        }
+        const tVal = tempC == null || Number.isNaN(Number(tempC)) ? null : Number(tempC);
+        if (tVal !== null && tVal < 0) {
+          return 'snow';
+        }
+        const lbl = String(condLabel || '').toLowerCase();
+        if (trigFx === 'fog' || lbl.includes('fog') || lbl.includes('hazy') || lbl.includes('mist') || Number(wmoCode) === 45 || Number(wmoCode) === 48) {
+          return 'fog';
+        }
+        if (trigFx === 'rain' || lbl.includes('rain') || lbl.includes('drizzle') || lbl.includes('shower') || (Number(wmoCode) >= 51 && Number(wmoCode) <= 82)) {
+          return 'rain';
+        }
+        const isNightNow = isNightHour24();
+        if (!isNightNow && (lbl.includes('scattered') || lbl.includes('partly') || Number(wmoCode) === 2)) {
+          return 'partlysunny';
+        }
+        if (!isNightNow && (lbl.includes('sun') || lbl.includes('clear') || lbl.includes('dry') || Number(wmoCode) === 0 || Number(wmoCode) === 1)) {
+          return 'sunny';
+        }
+        if (lbl.includes('cloud') || lbl.includes('overcast') || Number(wmoCode) === 3) {
+          return 'cloudy';
+        }
+        return getWmoMeta(wmoCode).fx;
+      }
+
+      function normalizeFrontendRain(wmoCode, rawChance, hasZeroPrecip = false, hourCode = null, tempC = null, condLabel = '') {
         const code = Number(wmoCode ?? 0);
         const hCode = Number(hourCode ?? code);
+        let pct = Math.max(0, Math.min(100, Math.round(Number(rawChance ?? 0))));
+
+        if (isSnowCondition(code, tempC, hasZeroPrecip ? 0 : 1, pct, condLabel) || isSnowCondition(hCode, tempC, hasZeroPrecip ? 0 : 1, pct, '')) {
+          if (pct === 0) return { chance: 0, min: 0, max: 0, display: '0%' };
+          const minPct = Math.max(0, Math.min(100, pct - 5));
+          const maxPct = Math.max(minPct, Math.min(100, pct + 5));
+          return { chance: pct, min: minPct, max: maxPct, display: `${minPct}-${maxPct}%` };
+        }
+
         const precipZero = Boolean(hasZeroPrecip) || code < 51;
         const hasActiveRain = !precipZero || code >= 51 || hCode >= 51;
         const isDrySky = !hasActiveRain && code <= 3 && hCode <= 3;
 
-        let pct = Math.max(0, Math.min(100, Math.round(Number(rawChance ?? 0))));
         if (isDrySky && pct <= 35) {
           pct = 0;
         } else if (!hasActiveRain && pct > 50) {
@@ -2450,21 +2572,11 @@
         const q = String(rawQuery || '').trim();
         if (!q) return null;
         const lowerQ = q.toLowerCase();
-        if (lowerQ === 'north pole') {
-          return { name: 'North Pole', country: 'Arctic', lat: 90.0, lon: 0.0 };
-        }
-        if (lowerQ === 'south pole') {
-          return { name: 'South Pole', country: 'Antarctica', lat: -90.0, lon: 0.0 };
-        }
-        if (lowerQ === 'gulmarg') {
-          return { name: 'Gulmarg', country: 'India', lat: 34.0484, lon: 74.3805 };
-        }
-        if (lowerQ === 'ladakh') {
-          return { name: 'Leh', country: 'India', lat: 34.1526, lon: 77.5771 };
-        }
-        if (lowerQ === 'himachal pradesh' || lowerQ === 'himachal') {
-          return { name: 'Shimla', country: 'India', lat: 31.1048, lon: 77.1734 };
-        }
+        if (lowerQ === 'north pole') return { name: 'North Pole', country: 'Arctic', lat: 90.0, lon: 0.0 };
+        if (lowerQ === 'south pole') return { name: 'South Pole', country: 'Antarctica', lat: -90.0, lon: 0.0 };
+        if (lowerQ === 'gulmarg') return { name: 'Gulmarg', country: 'India', lat: 34.0484, lon: 74.3805 };
+        if (lowerQ === 'ladakh') return { name: 'Leh', country: 'India', lat: 34.1526, lon: 77.5771 };
+        if (lowerQ === 'himachal pradesh' || lowerQ === 'himachal') return { name: 'Shimla', country: 'India', lat: 31.1048, lon: 77.1734 };
         const hub = INDIAN_STATE_HUBS[lowerQ];
         if (hub) return { ...hub };
 
@@ -2487,9 +2599,6 @@
         }
       }
 
-      /**
-       * Fetches city telemetry from the backend (or Open-Meteo fallback) and updates UI.
-       */
       async function fetchCityAndOpen(cityObj, shouldZoom = true) {
         selectedCity = {
           name: cityObj.name,
@@ -2511,15 +2620,16 @@
           startZoomTransition(selectedCity.lat, selectedCity.lon, true);
         }
 
-        // Fetch exact local timezone clock & is_day flag in parallel so day/night theme never lags
         const localClockPromise = fetch(
           `https://api.open-meteo.com/v1/forecast?latitude=${selectedCity.lat}&longitude=${selectedCity.lon}&current=is_day,weather_code&timezone=auto`
         )
-          .then((r) => r.json())
+          .then((r) => {
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            return r.json();
+          })
           .then((d) => d.current || null)
           .catch(() => null);
 
-        let backendErr = null;
         try {
           const [dash, localClock] = await Promise.all([
             fetchBackendJson(`/dashboard-summary?location=${encodeURIComponent(selectedCity.name)}`, 16000),
@@ -2539,16 +2649,19 @@
             }
 
             showNotice('');
+            setMeteoOfflineBadge(false);
             renderAccuweatherAlertsBanner(dash.accuweather_intelligence || dash.rain_analysis);
             const tb = dash.taskbar_cards || {};
             const aq = dash.air_quality || {};
             const weekly = dash.weekly_strip || [];
             const rawCond = String(dash.weather_condition || '').trim();
             const cond = rawCond.toLowerCase();
+            const trigUpper = String(dash.visual_triggers?.weather_effect || '').toUpperCase();
 
             let wmoCode = 2;
-            if (cond.includes('thunder')) wmoCode = 95;
-            else if (cond.includes('snow')) wmoCode = 71;
+            if (cond.includes('thunder') || cond.includes('storm') || trigUpper.includes('THUNDER')) wmoCode = 95;
+            else if (cond.includes('heavy snow')) wmoCode = 75;
+            else if (cond.includes('snow') || trigUpper.includes('SNOW')) wmoCode = 71;
             else if (cond.includes('fog') || cond.includes('hazy') || cond.includes('mist')) wmoCode = 45;
             else if (cond.includes('drizzle')) wmoCode = 51;
             else if (cond.includes('scattered')) wmoCode = 2;
@@ -2586,21 +2699,73 @@
               : Number(rawRainMax || 0);
             let effectiveSkyCode = (hasZeroPrecip && !isExplicitDrizzle && wmoCode >= 58 && wmoCode <= 82) ? 2 : (isExplicitDrizzle ? 51 : wmoCode);
             const firstHourCode = Number(apiCodes[0] ?? effectiveSkyCode);
-            const rainOutlook = normalizeFrontendRain(effectiveSkyCode, rawMidChance, hasZeroPrecip && !isExplicitDrizzle, firstHourCode);
 
             const rawLower = rawCond.toLowerCase();
             const isNightNow = isNightHour24();
             const backendVerdict = String(rainData.ai_verdict || '').toLowerCase();
             const isExplicitSunnySky = !rawCond && wmoCode <= 1;
-            const hasRainSignal = !isExplicitSunnySky && (
+
+            const thunderDetectedNow = (
+              isThunderCondition(wmoCode, rawCond, rawMidChance, precipNowVal, tb.temperature_c) ||
+              isThunderCondition(firstHourCode, '', rawMidChance, precipNowVal, tb.temperature_c) ||
+              trigUpper.includes('THUNDER') ||
+              backendVerdict.includes('thunder') ||
+              backendVerdict.includes('heavy rain') ||
+              (!snowDetectedNow && !isExplicitSunnySky && rawMidChance >= 85)
+            );
+            const snowDetectedNow = (
+              isSnowCondition(effectiveSkyCode, tb.temperature_c, precipNowVal, rawMidChance, rawCond) ||
+              isSnowCondition(firstHourCode, tb.temperature_c, precipNowVal, rawMidChance, '') ||
+              trigUpper.includes('SNOW') ||
+              backendVerdict.includes('snow')
+            );
+            const finalThunderNow = !snowDetectedNow && thunderDetectedNow;
+
+            const rainOutlook = normalizeFrontendRain(
+              effectiveSkyCode,
+              rawMidChance,
+              hasZeroPrecip && !isExplicitDrizzle && !snowDetectedNow,
+              firstHourCode,
+              tb.temperature_c,
+              snowDetectedNow ? 'Snowfall' : rawCond
+            );
+
+            const hasRainSignal = !snowDetectedNow && !finalThunderNow && !isExplicitSunnySky && (
               isExplicitDrizzle ||
               !hasZeroPrecip ||
               wmoCode >= 51 ||
-              rainOutlook.chance >= 55 ||
+              (rainOutlook.chance >= 55 && !isDrySky) ||
               (backendVerdict.includes('rain expected') && !isDrySky)
             );
+
             let normalizedCondLabel;
-            if (isExplicitDrizzle || rawLower === 'light drizzle') {
+            if (snowDetectedNow) {
+              const isHeavyNow = (
+                rawLower.includes('heavy snow') ||
+                backendVerdict.includes('heavy snow') ||
+                Number(effectiveSkyCode) === 75 ||
+                Number(effectiveSkyCode) === 86 ||
+                Number(firstHourCode) === 75 ||
+                Number(firstHourCode) === 86 ||
+                precipNowVal >= 3.0 ||
+                rainOutlook.chance >= 85
+              );
+              const isModerateNow = !isHeavyNow && (
+                rawLower.includes('moderate snow') ||
+                backendVerdict.includes('moderate snow') ||
+                Number(effectiveSkyCode) === 73 ||
+                Number(firstHourCode) === 73 ||
+                (precipNowVal >= 0.5 && precipNowVal < 3.0) ||
+                rainOutlook.chance >= 45
+              );
+              normalizedCondLabel = isHeavyNow ? 'Heavy Snowfall' : (isModerateNow ? 'Moderate Snowfall' : 'Snowfall');
+              if (!((Number(effectiveSkyCode) >= 71 && Number(effectiveSkyCode) <= 77) || Number(effectiveSkyCode) === 85 || Number(effectiveSkyCode) === 86)) {
+                effectiveSkyCode = isHeavyNow ? 75 : (isModerateNow ? 73 : 71);
+              }
+            } else if (finalThunderNow) {
+              normalizedCondLabel = 'Thunderstorm';
+              effectiveSkyCode = Number(effectiveSkyCode) >= 95 ? Number(effectiveSkyCode) : 95;
+            } else if (isExplicitDrizzle || rawLower === 'light drizzle') {
               normalizedCondLabel = 'Light Drizzle';
               effectiveSkyCode = 51;
             } else if (hasRainSignal && !cond.includes('thunder') && !cond.includes('snow') && !cond.includes('rain') && !cond.includes('shower') && !cond.includes('drizzle')) {
@@ -2621,34 +2786,55 @@
               normalizedCondLabel = rawCond;
             }
 
-            if (normalizedCondLabel === 'Rainy') {
-              effectiveSkyCode = 61;
-            } else if (normalizedCondLabel === 'Light Drizzle') {
-              effectiveSkyCode = 51;
-            } else if (normalizedCondLabel === 'Passing Showers') {
-              effectiveSkyCode = 80;
-            } else if (normalizedCondLabel.toLowerCase().includes('scattered')) {
-              effectiveSkyCode = hasRainSignal ? 80 : 2;
+            if (!snowDetectedNow && !thunderDetectedNow) {
+              if (normalizedCondLabel === 'Rainy') {
+                effectiveSkyCode = 61;
+              } else if (normalizedCondLabel === 'Light Drizzle') {
+                effectiveSkyCode = 51;
+              } else if (normalizedCondLabel === 'Passing Showers') {
+                effectiveSkyCode = 80;
+              } else if (normalizedCondLabel.toLowerCase().includes('scattered')) {
+                effectiveSkyCode = hasRainSignal ? 80 : 2;
+              }
             }
 
             const nowHour = getEffectiveHour24();
-            const hourlySlots = [];
-            const slotCount = Math.max(apiTimes.length, apiCodes.length, apiProbs.length, 6);
-            for (let i = 0; i < Math.min(6, slotCount); i++) {
-              let hr = (nowHour + i) % 24;
-              if (typeof apiTimes[i] === 'string' && apiTimes[i].includes('T')) {
-                const parsedHr = Number(apiTimes[i].split('T')[1]?.slice(0, 2));
-                if (!Number.isNaN(parsedHr)) hr = parsedHr;
+            const curHourIso = String(observedIso || '').slice(0, 13);
+            let apiStartOffset = 0;
+            if (curHourIso && apiTimes.length) {
+              const foundIdx = apiTimes.findIndex((tStr) => String(tStr).startsWith(curHourIso));
+              if (foundIdx >= 0) {
+                apiStartOffset = foundIdx;
+              } else {
+                const parsedFirstApiHr = parseLocalHourFromIso(String(apiTimes[0] || ''));
+                if (parsedFirstApiHr !== null) {
+                  apiStartOffset = ((nowHour - parsedFirstApiHr) % 24 + 24) % 24;
+                  if (apiStartOffset >= apiTimes.length) apiStartOffset = 0;
+                }
               }
+            }
+            const hourlySlots = [];
+            for (let i = 0; i < 6; i++) {
+              const hr = (nowHour + i) % 24;
+              const apiIdx = apiStartOffset + i;
               const labels = buildHourlyTimeLabels(hr, i === 0);
-              const rawSlotCode = Number(apiCodes[i] ?? effectiveSkyCode);
-              const slotCode = (hasZeroPrecip && rawSlotCode >= 51 && rawSlotCode <= 82) ? 2 : rawSlotCode;
+              const rawSlotCode = Number(apiCodes[apiIdx] ?? effectiveSkyCode);
+              const slotProbRaw = Number(apiProbs[apiIdx] ?? rainOutlook.chance);
+              const slotIsSnow = isSnowCondition(rawSlotCode, tb.temperature_c, precipNowVal, slotProbRaw, '');
+              const slotIsThunder = !slotIsSnow && (isThunderCondition(rawSlotCode, '', slotProbRaw, precipNowVal, tb.temperature_c) || (!hasZeroPrecip && slotProbRaw >= 85));
+              const slotCode = slotIsThunder
+                ? Math.max(95, rawSlotCode)
+                : (slotIsSnow
+                  ? (rawSlotCode === 75 || rawSlotCode === 86 ? 75 : 71)
+                  : ((hasZeroPrecip && rawSlotCode >= 51 && rawSlotCode <= 82) ? 2 : rawSlotCode));
               const meta = getWmoMeta(slotCode, hr);
               const slotRain = normalizeFrontendRain(
                 slotCode,
-                apiProbs[i] ?? rainOutlook.chance,
+                slotProbRaw,
                 hasZeroPrecip,
-                slotCode
+                slotCode,
+                tb.temperature_c,
+                meta.label
               );
               hourlySlots.push({
                 hour24: hr,
@@ -2659,6 +2845,18 @@
                 condition: meta.label
               });
             }
+
+            const finalRainVerdict = snowDetectedNow
+              ? `${normalizedCondLabel} Expected Today`
+              : (finalThunderNow
+                ? (backendVerdict.includes('heavy rain') || precipNowVal >= 5.0 || rawMidChance >= 85
+                  ? 'Thunderstorm & Heavy Rain Expected Today'
+                  : 'Thunderstorm Expected Today')
+                : (rainOutlook.chance >= 55 && !isDrySky
+                  ? 'Rain Expected Today'
+                  : (rainOutlook.chance >= 25 && !isDrySky)
+                    ? 'Chance of Rain Today'
+                    : 'No Rain Currently Expected'));
 
             latestTelemetry = {
               city: selectedCity,
@@ -2671,17 +2869,17 @@
               pressure: tb.pressure_mb ?? 1012,
               wmoCode: effectiveSkyCode,
               weatherConditionLabel: normalizedCondLabel,
-              weatherTrigger: (hasZeroPrecip && String(dash.visual_triggers?.weather_effect || '').toUpperCase().includes('RAIN'))
-                ? 'CLOUD_EFFECT'
-                : (dash.visual_triggers?.weather_effect || ''),
+              weatherTrigger: snowDetectedNow
+                ? 'SNOW_EFFECT'
+                : (finalThunderNow
+                  ? 'THUNDER_EFFECT'
+                  : ((hasZeroPrecip && trigUpper.includes('RAIN'))
+                    ? 'CLOUD_EFFECT'
+                    : (dash.visual_triggers?.weather_effect || ''))),
               aqiTrigger: dash.visual_triggers?.aqi_effect || '',
               rainChance: rainOutlook.chance,
               rainRangeDisplay: rainOutlook.display,
-              rainVerdict: rainOutlook.chance >= 55
-                ? 'Rain Expected Today'
-                : rainOutlook.chance >= 25
-                  ? 'Chance of Rain Today'
-                  : 'No Rain Currently Expected',
+              rainVerdict: finalRainVerdict,
               hourlySlots,
               waqiAqi: aq.live_current_aqi ?? null,
               aqiRangeDisplay: aq.aqi_range?.display || null,
@@ -2704,23 +2902,37 @@
                 min: weekly.map((d) => d.temp_range_c?.min ?? 22),
                 rain: weekly.map((d) => {
                   const dc = String(d.condition || '').toLowerCase();
-                  const dCode = dc.includes('thunder') ? 95
-                    : dc.includes('snow') ? 71
+                  const dMax = Number(d.temp_range_c?.max ?? 28);
+                  const rMin = d.rain_chance_range?.min ?? 0;
+                  const rMax = d.rain_chance_range?.max ?? rMin;
+                  const mid = Math.round((Number(rMin) + Number(rMax)) / 2);
+                  const isSnowDay = isSnowCondition(0, dMax, 0, mid, dc);
+                  if (isSnowDay) return mid;
+                  const dCode = (dc.includes('thunder') || dc.includes('storm')) ? 95
                     : (dc.includes('rain') || dc.includes('drizzle') || dc.includes('shower')) ? 61
                     : (dc.includes('fog') || dc.includes('hazy') || dc.includes('mist')) ? 45
                     : dc.includes('partly sunny') ? 2
                     : (dc.includes('cloud') || dc.includes('overcast')) ? 3
                     : (dc.includes('sun') || dc.includes('clear') || dc.includes('dry')) ? 0
                     : 1;
-                  const rMin = d.rain_chance_range?.min ?? 0;
-                  const rMax = d.rain_chance_range?.max ?? rMin;
-                  const mid = Math.round((Number(rMin) + Number(rMax)) / 2);
                   return normalizeFrontendRain(dCode, mid, dCode < 51, dCode).chance;
                 }),
                 code: weekly.map((d) => {
                   const dc = String(d.condition || '').toLowerCase();
-                  if (dc.includes('thunder')) return 95;
-                  if (dc.includes('snow')) return 71;
+                  const dMax = Number(d.temp_range_c?.max ?? 28);
+                  const rMin = d.rain_chance_range?.min ?? 0;
+                  const rMax = d.rain_chance_range?.max ?? rMin;
+                  const mid = Math.round((Number(rMin) + Number(rMax)) / 2);
+                  if (dc.includes('heavy snow')) return 75;
+                  if (dc.includes('moderate snow')) return 73;
+                  if (dc.includes('snow') || String(d.visual_trigger || '').toUpperCase().includes('SNOW')) return 71;
+                  if (isSnowCondition(0, dMax, 0, mid, dc)) return mid >= 85 ? 75 : (mid >= 45 ? 73 : 71);
+                  if (
+                    dc.includes('thunder') ||
+                    dc.includes('storm') ||
+                    String(d.visual_trigger || '').toUpperCase().includes('THUNDER') ||
+                    mid >= 85
+                  ) return 95;
                   if (dc.includes('rain') || dc.includes('drizzle') || dc.includes('shower')) return 61;
                   if (dc.includes('fog') || dc.includes('hazy') || dc.includes('mist')) return 45;
                   if (dc.includes('partly sunny')) return 2;
@@ -2734,19 +2946,20 @@
             renderAllPages();
             return;
           }
-        } catch (err) {
-          backendErr = err;
-        }
+        } catch (_) {}
 
-        const reasonText = backendErr ? backendErr.message : 'Unreachable';
-        updateBackendIndicators(false, null, reasonText);
-        showNotice(`FastAPI backend at ${getBackendBaseUrl()} is offline (${reasonText}). Using live Open-Meteo fallback.`, true);
+        updateBackendIndicators(false, null);
+        setMeteoOfflineBadge(true);
+        showNotice('');
         renderAccuweatherAlertsBanner(null);
 
         try {
-          const wUrl = `https://api.open-meteo.com/v1/forecast?latitude=${selectedCity.lat}&longitude=${selectedCity.lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,surface_pressure,wind_speed_10m,wind_direction_10m&hourly=weather_code,precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=7`;
+          const wUrl = `https://api.open-meteo.com/v1/forecast?latitude=${selectedCity.lat}&longitude=${selectedCity.lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m&hourly=weather_code,precipitation_probability,surface_pressure,cape,boundary_layer_height,wind_speed_10m,wind_speed_80m,wind_speed_120m,wind_direction_10m,wind_gusts_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=7`;
           const aUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${selectedCity.lat}&longitude=${selectedCity.lon}&current=us_aqi,pm2_5,pm10`;
           const [wRes, aRes] = await Promise.all([fetch(wUrl), fetch(aUrl)]);
+          if (!wRes.ok || !aRes.ok) {
+            throw new Error(`Open-Meteo HTTP ${wRes.status}/${aRes.status}`);
+          }
           const wData = await wRes.json();
           const aData = await aRes.json();
           const cur = wData.current || {};
@@ -2766,6 +2979,14 @@
           const hTimes = Array.isArray(hourly.time) ? hourly.time : [];
           const hCodes = Array.isArray(hourly.weather_code) ? hourly.weather_code : [];
           const hProbs = Array.isArray(hourly.precipitation_probability) ? hourly.precipitation_probability : [];
+          const hPress = Array.isArray(hourly.surface_pressure) ? hourly.surface_pressure : [];
+          const hCape = Array.isArray(hourly.cape) ? hourly.cape : [];
+          const hPbl = Array.isArray(hourly.boundary_layer_height) ? hourly.boundary_layer_height : [];
+          const hW10 = Array.isArray(hourly.wind_speed_10m) ? hourly.wind_speed_10m : [];
+          const hW80 = Array.isArray(hourly.wind_speed_80m) ? hourly.wind_speed_80m : [];
+          const hW120 = Array.isArray(hourly.wind_speed_120m) ? hourly.wind_speed_120m : [];
+          const hWDir = Array.isArray(hourly.wind_direction_10m) ? hourly.wind_direction_10m : [];
+          const hGust = Array.isArray(hourly.wind_gusts_10m) ? hourly.wind_gusts_10m : [];
           const curPrefix = String(cur.time || '').slice(0, 13);
           let startIdx = curPrefix ? hTimes.findIndex((tStr) => String(tStr).startsWith(curPrefix)) : -1;
           if (startIdx < 0) startIdx = 0;
@@ -2773,16 +2994,19 @@
           const nowHour = getEffectiveHour24();
           const fallbackHourlySlots = Array.from({ length: 6 }, (_, idx) => {
             const slotIdx = startIdx + idx;
-            let hr = (nowHour + idx) % 24;
-            if (typeof hTimes[slotIdx] === 'string' && hTimes[slotIdx].includes('T')) {
-              const parsedHr = Number(hTimes[slotIdx].split('T')[1]?.slice(0, 2));
-              if (!Number.isNaN(parsedHr)) hr = parsedHr;
-            }
+            const hr = (nowHour + idx) % 24;
             const labels = buildHourlyTimeLabels(hr, idx === 0);
             const rawSlotCode = Number(hCodes[slotIdx] ?? fallbackCode);
-            const slotCode = (fallbackHasZeroPrecip && rawSlotCode >= 51 && rawSlotCode <= 82) ? 2 : rawSlotCode;
+            const slotProbRaw = Number(hProbs[slotIdx] ?? 0);
+            const slotIsSnow = isSnowCondition(rawSlotCode, cur.temperature_2m, cur.precipitation, slotProbRaw, '');
+            const slotIsThunder = !slotIsSnow && (isThunderCondition(rawSlotCode, '') || slotProbRaw >= 85);
+            const slotCode = slotIsThunder
+              ? Math.max(95, rawSlotCode)
+              : (slotIsSnow
+                ? (rawSlotCode === 75 || rawSlotCode === 86 ? 75 : 71)
+                : ((fallbackHasZeroPrecip && rawSlotCode >= 51 && rawSlotCode <= 82) ? 2 : rawSlotCode));
             const meta = getWmoMeta(slotCode, hr);
-            const slotRain = normalizeFrontendRain(slotCode, hProbs[slotIdx] ?? 0, fallbackHasZeroPrecip, slotCode);
+            const slotRain = normalizeFrontendRain(slotCode, slotProbRaw, fallbackHasZeroPrecip, slotCode, cur.temperature_2m, meta.label);
             return {
               hour24: hr,
               primary12h: labels.primary12h,
@@ -2794,17 +3018,63 @@
           });
 
           const firstHourRain = fallbackHourlySlots[0]?.prob ?? (liveDailyRain[0] ?? 0);
+          const fallbackSnowNow = isSnowCondition(fallbackCode, cur.temperature_2m, cur.precipitation, firstHourRain, '');
+          const fallbackThunderNow = !fallbackSnowNow && (
+            isThunderCondition(fallbackCode, '', firstHourRain, cur.precipitation, cur.temperature_2m) ||
+            firstHourRain >= 85
+          );
+          const effectiveFallbackCode = fallbackSnowNow
+            ? (Number(fallbackCode) === 75 || Number(fallbackCode) === 86 ? 75 : 71)
+            : (fallbackThunderNow
+              ? Math.max(95, Number(fallbackCode))
+              : fallbackCode);
           const fallbackRain = normalizeFrontendRain(
-            fallbackCode,
+            effectiveFallbackCode,
             firstHourRain,
             fallbackHasZeroPrecip,
-            Number(hCodes[startIdx] ?? fallbackCode)
+            Number(hCodes[startIdx] ?? effectiveFallbackCode),
+            cur.temperature_2m,
+            fallbackSnowNow ? 'Snowfall' : ''
           );
           const deg = Number(cur.wind_direction_10m);
           const compassDirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
-          const fallbackCompass = Number.isFinite(deg)
-            ? compassDirs[Math.round((((deg % 360) + 360) % 360) / 45) % 8]
+          const degToComp = (d) => Number.isFinite(Number(d))
+            ? compassDirs[Math.round((((Number(d) % 360) + 360) % 360) / 45) % 8]
             : 'SE';
+          const fallbackCompass = degToComp(deg);
+          const isHeavySnowFallback = Number(fallbackCode) === 75 || Number(fallbackCode) === 86 || Number(cur.precipitation ?? 0) >= 3.0;
+
+          const fbW10 = Number((cur.wind_speed_10m ?? 10).toFixed(1));
+          const fbGust = Number((cur.wind_gusts_10m ?? (fbW10 + 4.5)).toFixed(1));
+          const fbW80 = Number((hW80[startIdx] ?? (fbW10 * 1.28)).toFixed(1));
+          const fbW120 = Number((hW120[startIdx] ?? (fbW10 * 1.42)).toFixed(1));
+          const fbPress = Number((cur.surface_pressure ?? 1012).toFixed(1));
+          const fbCape = Math.round(Number(hCape[startIdx] ?? 140));
+          const fbPbl = Math.round(Number(hPbl[startIdx] ?? 820));
+          const fbProg12h = [0, 3, 6, 9, 12].map((hOff) => {
+            const sIdx = Math.min(Math.max(0, hTimes.length - 1), startIdx + hOff);
+            const w10 = Number((hW10[sIdx] ?? fbW10).toFixed(1));
+            const wg = Number(Math.max(w10 + 1.2, hGust[sIdx] ?? fbGust).toFixed(1));
+            const w80 = Number((hW80[sIdx] ?? (w10 * 1.28)).toFixed(1));
+            const w120 = Number((hW120[sIdx] ?? (w10 * 1.42)).toFixed(1));
+            const pMb = Number((hPress[sIdx] ?? fbPress).toFixed(1));
+            const cVal = Math.round(Number(hCape[sIdx] ?? fbCape));
+            const dDeg = Math.round(Number(hWDir[sIdx] ?? (Number.isFinite(deg) ? deg : 140)));
+            const tStr = String(hTimes[sIdx] || '');
+            return {
+              horizon_label: hOff === 0 ? 'Now' : `+${hOff}h`,
+              local_clock: hOff === 0 ? 'Now' : (tStr.includes('T') ? tStr.split('T')[1].slice(0, 5) : `+${hOff}h`),
+              hours_ahead: hOff,
+              wind_speed_kmh: w10,
+              wind_gusts_kmh: wg,
+              wind_80m_kmh: w80,
+              wind_120m_kmh: w120,
+              surface_pressure_mb: pMb,
+              cape_jkg: cVal,
+              wind_direction_degrees: dDeg,
+              wind_direction_compass: degToComp(dDeg)
+            };
+          });
 
           latestTelemetry = {
             city: selectedCity,
@@ -2815,15 +3085,21 @@
             windSpeed: Math.round(cur.wind_speed_10m ?? 10),
             windDirCompass: fallbackCompass,
             pressure: Math.round(cur.surface_pressure ?? 1012),
-            wmoCode: fallbackCode,
-            weatherConditionLabel: (Number(fallbackCode) >= 71 && Number(fallbackCode) <= 77)
-              ? 'Snowfall'
-              : (Number(cur.temperature_2m ?? 28) < 0 && /pole|ladakh|leh|gulmarg|shimla|manali|alps|andes|rockies|himalaya|range|peak|glacier|arctic|antarctic/i.test(`${selectedCity.name} ${selectedCity.country}`) ? 'Sub-Zero Mountain' : null),
-            weatherTrigger: (Number(fallbackCode) >= 71 && Number(fallbackCode) <= 77) ? 'SNOW_EFFECT' : '',
+            wmoCode: effectiveFallbackCode,
+            weatherConditionLabel: fallbackSnowNow
+              ? (isHeavySnowFallback ? 'Heavy Snowfall' : 'Snowfall')
+              : (fallbackThunderNow
+                ? 'Thunderstorm'
+                : (Number(cur.temperature_2m ?? 28) < 0 && /pole|ladakh|leh|gulmarg|shimla|manali|alps|andes|rockies|himalaya|range|peak|glacier|arctic|antarctic/i.test(`${selectedCity.name} ${selectedCity.country}`) ? 'Sub-Zero Mountain' : null)),
+            weatherTrigger: fallbackSnowNow ? 'SNOW_EFFECT' : (fallbackThunderNow ? 'THUNDER_EFFECT' : ''),
             aqiTrigger: '',
             rainChance: fallbackRain.chance,
             rainRangeDisplay: fallbackRain.display,
-            rainVerdict: fallbackRain.chance >= 55 ? 'Rain Expected Today' : (fallbackRain.chance >= 25 ? 'Chance of Rain Today' : 'No Rain Expected Today'),
+            rainVerdict: fallbackSnowNow
+              ? `${isHeavySnowFallback ? 'Heavy Snowfall' : 'Snowfall'} Expected Today`
+              : (fallbackThunderNow
+                ? 'Thunderstorm Expected Today'
+                : (fallbackRain.chance >= 55 ? 'Rain Expected Today' : (fallbackRain.chance >= 25 ? 'Chance of Rain Today' : 'No Rain Expected Today'))),
             hourlySlots: fallbackHourlySlots,
             waqiAqi: aCur.us_aqi ?? null,
             aqiRangeDisplay: null,
@@ -2839,16 +3115,51 @@
             pm10: aCur.pm10 ?? '--',
             climate2050: null,
             satellite: null,
-            wrf: null,
+            wrf: {
+              numerical_model: 'Open-Meteo ICON / GFS Live NWP',
+              simulated_atmospheric_metrics: {
+                wind_speed_kmh: fbW10,
+                wind_gusts_kmh: fbGust,
+                wind_80m_kmh: fbW80,
+                wind_120m_kmh: fbW120,
+                wind_shear_10_120_kmh: Number(Math.max(0, fbW120 - fbW10).toFixed(1)),
+                surface_pressure_mb: fbPress,
+                cape_jkg: fbCape,
+                boundary_layer_height_m: fbPbl,
+                wind_direction_degrees: Number.isFinite(deg) ? Math.round(deg) : 140,
+                wind_direction_compass: fallbackCompass,
+                atmospheric_stability_index: (fbGust >= 30 || fbCape >= 1500)
+                  ? 'Severe Convective / Gust Warning'
+                  : (fbW10 >= 15 || (fbGust - fbW10) >= 8 || fbCape >= 600)
+                    ? 'Moderate Boundary-Layer Turbulence'
+                    : 'Stable Laminar Flow'
+              },
+              progression_12h: fbProg12h
+            },
             daily: {
               time: daily.time || [],
               max: (daily.temperature_2m_max || []).map((v) => Math.round(v)),
               min: (daily.temperature_2m_min || []).map((v) => Math.round(v)),
               rain: liveDailyRain.map((v, idx) => {
                 const dCode = Number(liveDailyCodes[idx] ?? 1);
+                const dMax = Number(daily.temperature_2m_max?.[idx] ?? 28);
+                if (isSnowCondition(dCode, dMax, 0, v ?? 0, '')) {
+                  return Math.max(0, Math.min(100, Math.round(Number(v ?? 0))));
+                }
                 return normalizeFrontendRain(dCode, v ?? 0, dCode < 51, dCode).chance;
               }),
-              code: liveDailyCodes
+              code: liveDailyCodes.map((c, idx) => {
+                const numC = Number(c ?? 1);
+                const dMax = Number(daily.temperature_2m_max?.[idx] ?? 28);
+                const dRain = Number(liveDailyRain[idx] ?? 0);
+                if (isSnowCondition(numC, dMax, 0, dRain, '')) {
+                  return (numC === 75 || numC === 86 || dRain >= 75) ? 75 : 71;
+                }
+                if (isThunderCondition(numC, '', dRain, 0, dMax) || Number(dRain) >= 85) {
+                  return 95;
+                }
+                return numC;
+              })
             }
           };
 
@@ -2856,9 +3167,6 @@
         } catch (_) {}
       }
 
-      /**
-       * Updates the upper location header subtitle based on the active tab.
-       */
       function updateTopicHeaderSubtitle(t) {
         const subEl = document.getElementById('dash-city-coords');
         if (!subEl || !t) return;
@@ -2868,9 +3176,6 @@
         subEl.textContent = `${coordPart} · Local ${localClockStr} · Synced ${syncedClockStr}`;
       }
 
-      /**
-       * Renders all overview and sub-page sections safely.
-       */
       function renderAllPages() {
         try {
           if (!latestTelemetry) return;
@@ -2880,9 +3185,19 @@
           const displayCond = t.weatherConditionLabel || wMeta.label;
           const condLower = displayCond.toLowerCase();
           const isNightNow = isNightHour24();
-          const isSubZeroColdSky = Number(t.temp) < 0 && !(Number(t.wmoCode) >= 71 && Number(t.wmoCode) <= 77);
-          const labelFx = condLower.includes('thunder') ? 'thunder'
-            : (condLower.includes('snow') || isSubZeroColdSky) ? 'snow'
+          const isSnowNow = (
+            isSnowCondition(t.wmoCode, t.temp, 0, t.rainChance, displayCond) ||
+            String(t.weatherTrigger || '').toUpperCase().includes('SNOW')
+          );
+          const isThunderNow = !isSnowNow && (
+            isThunderCondition(t.wmoCode, displayCond, t.rainChance, 0, t.temp) ||
+            String(t.weatherTrigger || '').toUpperCase().includes('THUNDER') ||
+            Number(t.rainChance ?? 0) >= 85
+          );
+          const isSubZeroColdSky = Number(t.temp) < 0 && !isSnowNow && !isThunderNow;
+
+          const labelFx = isThunderNow ? 'thunder'
+            : (isSnowNow || isSubZeroColdSky) ? 'snow'
             : (condLower.includes('fog') || condLower.includes('hazy') || condLower.includes('mist')) ? 'fog'
             : (condLower.includes('rain') || condLower.includes('drizzle') || condLower.includes('shower')) ? 'rain'
             : (!isNightNow && (condLower.includes('sun') || condLower.includes('clear') || condLower.includes('dry'))) ? 'sunny'
@@ -2897,13 +3212,14 @@
           liveAqiFx = aqiProfile.fx;
           aqiHazeIntensity = aqiProfile.intensity;
 
+          const activeIcon = isThunderNow ? '⛈️' : (isSnowNow ? '❄️' : wMeta.icon);
           document.getElementById('dash-city-title').textContent = `${t.city.name.toUpperCase()}, ${t.city.country.toUpperCase()}`;
-          document.getElementById('dash-weather-pill').textContent = `${wMeta.icon} ${displayCond}`;
+          document.getElementById('dash-weather-pill').textContent = `${activeIcon} ${displayCond}`;
           updateTopicHeaderSubtitle(t);
 
           document.getElementById('ov-temp').textContent = `${t.temp}°C`;
           document.getElementById('ov-cond').textContent = displayCond;
-          document.getElementById('ov-icon').textContent = wMeta.icon;
+          document.getElementById('ov-icon').textContent = activeIcon;
           document.getElementById('ov-meta').textContent =
             `Feels like ${t.feelsLike}°C · Humidity ${t.humidity}% · Wind ${t.windSpeed} km/h (${t.windDirCompass || 'SE'})`;
           const ovHumEl = document.getElementById('ov-humidity');
@@ -2942,7 +3258,7 @@
 
           renderSevenDayTrend(t.daily);
           renderCalendar();
-          renderSubtopicPages(t, wMeta, waqiCat);
+          renderSubtopicPages(t, { ...wMeta, icon: activeIcon, label: displayCond }, waqiCat);
           updateClimateProjectionForYear(selectedClimateYear);
           syncEffectForCurrentPage();
         } catch (err) {
@@ -2979,9 +3295,7 @@
         if (headingEl) headingEl.textContent = targetYear;
 
         const sliderEl = document.getElementById('climate-year-slider');
-        if (sliderEl && Number(sliderEl.value) !== targetYear) {
-          sliderEl.value = targetYear;
-        }
+        if (sliderEl && Number(sliderEl.value) !== targetYear) sliderEl.value = targetYear;
 
         document.querySelectorAll('.climate-preset').forEach((btn) => {
           btn.classList.toggle('active', Number(btn.dataset.climateYear) === targetYear);
@@ -3229,14 +3543,23 @@
           const label = dt.toLocaleDateString('en-US', { weekday: 'short' });
           const rawCode = Number(codeArr[i] ?? 1);
           const meta = getWmoMeta(rawCode);
-          const dayRain = normalizeFrontendRain(rawCode, rainArr[i] ?? 0, rawCode < 51, rawCode);
+          const isSnowDay = isSnowCondition(rawCode, validMax[i], 0, rainArr[i] ?? 0, meta.label);
+          const dayRain = isSnowDay
+            ? (() => {
+                const pct = Math.max(0, Math.min(100, Math.round(Number(rainArr[i] ?? 0))));
+                if (pct === 0) return { chance: 0, display: '0%' };
+                const lo = Math.max(0, pct - 5);
+                const hi = Math.min(100, pct + 5);
+                return { chance: pct, display: `${lo}-${hi}%` };
+              })()
+            : normalizeFrontendRain(rawCode, rainArr[i] ?? 0, rawCode < 51, rawCode);
 
           strip.innerHTML += `
             <div class="p-2 sm:p-2.5 rounded-xl bg-sky-500/10 border border-sky-400/25 hover:border-sky-400/55 transition text-center">
               <div class="text-[11px] font-bold text-slate-300">${label}</div>
-              <div class="text-base sm:text-lg my-1">${meta.icon}</div>
+              <div class="text-base sm:text-lg my-1" title="${meta.label}">${meta.icon}</div>
               <div class="text-xs font-extrabold text-white">${validMax[i]}° <span class="text-slate-400 font-semibold">/ ${validMin[i]}°</span></div>
-              <div class="text-[10px] text-sky-300 mt-0.5">💧 ${dayRain.display}</div>
+              <div class="text-[10px] text-sky-300 mt-0.5">${isSnowDay ? '❄️' : '💧'} ${dayRain.display}</div>
             </div>
           `;
         });
@@ -3285,15 +3608,19 @@
 
       function renderSubtopicPages(t, wMeta, waqiCat) {
         const alignedRainRange = t.rainRangeDisplay || `${t.rainChance ?? 0}%`;
+        const isThunderActive = isThunderCondition(t.wmoCode, t.weatherConditionLabel || wMeta.label);
+        const isSnowActive = !isThunderActive && isSnowCondition(t.wmoCode, t.temp, 0, t.rainChance, t.weatherConditionLabel || wMeta.label);
+        const predTitle = isThunderActive ? 'AI Thunderstorm Prediction' : (isSnowActive ? 'AI Snowfall Prediction' : 'AI Rainfall Prediction');
+        const rangeLabel = isSnowActive ? 'Snow' : (isThunderActive ? 'Storm' : 'Chance');
 
         document.getElementById('sub-rainfall-content').innerHTML = `
           <div class="prediction-card p-4">
             <div class="flex items-center justify-between">
-              <span class="text-xs text-sky-200 font-semibold">AI Rainfall Prediction</span>
+              <span class="text-xs text-sky-200 font-semibold">${predTitle}</span>
               <span class="prediction-badge">🔮 Forecast</span>
             </div>
             <div class="text-lg sm:text-xl font-extrabold text-white mt-2">${wMeta.icon} ${t.rainVerdict}</div>
-            <div class="text-xs text-sky-300 mt-1">Chance Range: ${alignedRainRange}</div>
+            <div class="text-xs text-sky-300 mt-1">${rangeLabel} Range: ${alignedRainRange}</div>
           </div>
           <div class="p-4 rounded-xl bg-white/5 border border-white/10">
             <div class="text-xs text-slate-400">Temperature &amp; Feels Like</div>
@@ -3310,35 +3637,45 @@
         const hourlyEl = document.getElementById('sub-rainfall-hourly');
         if (hourlyEl) {
           const nowHour = getEffectiveHour24();
-          const slots = (Array.isArray(t.hourlySlots) && t.hourlySlots.length)
-            ? t.hourlySlots.slice(0, 6)
-            : Array.from({ length: 6 }, (_, idx) => {
-                const hr = (nowHour + idx) % 24;
-                const labels = buildHourlyTimeLabels(hr, idx === 0);
-                const pct = Math.max(0, Math.min(100, Math.round(Number(t.rainChance ?? 0))));
-                const slotMeta = getWmoMeta(t.wmoCode, hr);
-                return {
-                  hour24: hr,
-                  primary12h: labels.primary12h,
-                  secondary24h: labels.secondary24h,
-                  prob: pct,
-                  icon: slotMeta.icon,
-                  condition: slotMeta.label
-                };
-              });
+          const slots = Array.from({ length: 6 }, (_, idx) => {
+            const hr = (nowHour + idx) % 24;
+            const labels = buildHourlyTimeLabels(hr, idx === 0);
+            const existingSlot = Array.isArray(t.hourlySlots)
+              ? (t.hourlySlots.find((s) => Number(s.hour24) === hr) || t.hourlySlots[idx])
+              : null;
+            if (existingSlot) {
+              return {
+                ...existingSlot,
+                hour24: hr,
+                primary12h: labels.primary12h,
+                secondary24h: labels.secondary24h
+              };
+            }
+            const pct = Math.max(0, Math.min(100, Math.round(Number(t.rainChance ?? 0))));
+            const slotMeta = getWmoMeta(t.wmoCode, hr);
+            return {
+              hour24: hr,
+              primary12h: labels.primary12h,
+              secondary24h: labels.secondary24h,
+              prob: pct,
+              icon: slotMeta.icon,
+              condition: slotMeta.label
+            };
+          });
 
           hourlyEl.innerHTML = `
             <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5">
               <div>
                 <p class="text-xs uppercase tracking-wider text-sky-300 font-bold">Hourly Weather &amp; Precipitation Slots</p>
-                <p class="text-[11px] text-slate-400">12-hour AM/PM &amp; 24-hour local slots with live rain probability for ${t.city.name}</p>
+                <p class="text-[11px] text-slate-400">12-hour AM/PM &amp; 24-hour local slots with live precipitation/snowfall probability for ${t.city.name}</p>
               </div>
               <span class="text-[10px] sm:text-[11px] font-mono text-sky-300">AM/PM · 24H WINDOWS</span>
             </div>
             <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2.5">
               ${slots.map((slot) => {
                 const pct = Math.max(0, Math.min(100, Math.round(Number(slot.prob ?? 0))));
-                const barColor = pct >= 70 ? '#818cf8' : pct >= 45 ? '#38bdf8' : '#2dd4bf';
+                const slotSnow = isSnowCondition(0, t.temp, 0, pct, slot.condition);
+                const barColor = slotSnow ? '#bae6fd' : (pct >= 70 ? '#818cf8' : pct >= 45 ? '#38bdf8' : '#2dd4bf');
                 return `
                   <div class="p-3 rounded-xl bg-slate-950/65 border border-sky-400/25 flex flex-col justify-between gap-2">
                     <div class="flex items-start justify-between gap-1">
@@ -3351,7 +3688,7 @@
                     <div>
                       <div class="text-xs font-bold text-white">${slot.condition}</div>
                       <div class="flex items-center justify-between text-[11px] mt-1">
-                        <span class="text-slate-400">Rain</span>
+                        <span class="text-slate-400">${slotSnow ? 'Snow' : 'Rain'}</span>
                         <span class="font-extrabold text-sky-300">${pct}%</span>
                       </div>
                     </div>
@@ -3430,13 +3767,13 @@
                     : 'hazardous';
 
         const kurtaPalette = {
-          good:          { top: '#2dd4bf', bot: '#0d9488', stroke: '#134e4a' },
-          moderate:      { top: '#fde047', bot: '#ca8a04', stroke: '#713f12' },
-          sensitive:     { top: '#fb923c', bot: '#ea580c', stroke: '#7c2d12' },
-          unhealthy:     { top: '#f87171', bot: '#dc2626', stroke: '#7f1d1d' },
-          very_unhealthy:{ top: '#c084fc', bot: '#9333ea', stroke: '#581c87' },
-          hazardous:     { top: '#f472b6', bot: '#db2777', stroke: '#831843' },
-          unavailable:   { top: '#94a3b8', bot: '#475569', stroke: '#1e293b' }
+          good:          { top: '#2dd4bf', bot: '#0d9488' },
+          moderate:      { top: '#fde047', bot: '#ca8a04' },
+          sensitive:     { top: '#fb923c', bot: '#ea580c' },
+          unhealthy:     { top: '#f87171', bot: '#dc2626' },
+          very_unhealthy:{ top: '#c084fc', bot: '#9333ea' },
+          hazardous:     { top: '#f472b6', bot: '#db2777' },
+          unavailable:   { top: '#94a3b8', bot: '#475569' }
         }[aqiTierKey];
 
         const characterCaption = aqiTierKey === 'good'
@@ -3548,35 +3885,26 @@
                 <stop offset="100%" stop-color="#f29f4b" />
               </linearGradient>
             </defs>
-
             <rect x="70" y="166" width="13" height="34" fill="#9ca3af" stroke="#1e1b18" stroke-width="2.5" />
             <rect x="97" y="166" width="13" height="34" fill="#9ca3af" stroke="#1e1b18" stroke-width="2.5" />
             <path d="M56 199 L83 199 L83 205 L54 205 C50 205 50 199 56 199 Z" fill="#090d16" stroke="#05070c" stroke-width="2.2" />
             <path d="M97 199 L124 199 C129 199 129 205 124 205 L97 205 Z" fill="#090d16" stroke="#05070c" stroke-width="2.2" />
-
             <rect x="83" y="103" width="14" height="15" fill="#f5a756" stroke="#1e1b18" stroke-width="2.4" />
-
             <path d="M57 112 L75 109 L90 126 L105 109 L123 112 L126 168 L119 168 L117 156 L115 168 L61 168 Z" fill="url(#kurtaBarGrad)" stroke="#1e1b18" stroke-width="2.5" stroke-linejoin="round" />
-
             <path d="M73 109 L90 128 L107 109" fill="none" stroke="#cbd5e1" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round" />
             <path d="M73 109 L90 128 L107 109" fill="none" stroke="#334155" stroke-width="2.6" stroke-dasharray="2.4 2.4" />
             <line x1="90" y1="128" x2="90" y2="152" stroke="#cbd5e1" stroke-width="6" stroke-linecap="round" />
             <line x1="90" y1="128" x2="90" y2="152" stroke="#334155" stroke-width="2.4" stroke-dasharray="2.2 2.2" />
-
             ${armsSvg}
-
             <path d="M128 69 C137 65 142 74 136 83 C132 89 126 89 123 85" fill="#f8b26a" stroke="#1e1b18" stroke-width="2.5" stroke-linecap="round" />
             <path d="M129 73 C133 72 134 77 130 80" fill="none" stroke="#7c3f1d" stroke-width="2" stroke-linecap="round" />
-
             <path d="M51 54 C46 78 55 104 86 106 C113 107 126 91 129 70 C131 53 123 36 90 36 C60 36 53 44 51 54 Z" fill="url(#skinToneGrad)" stroke="#1e1b18" stroke-width="2.6" />
             <ellipse cx="62" cy="79" rx="8.5" ry="5" fill="#fb7185" opacity="${isAlertPose ? '0.62' : '0.45'}" />
             <ellipse cx="112" cy="79" rx="8.5" ry="5" fill="#fb7185" opacity="${isAlertPose ? '0.62' : '0.45'}" />
-
             <path d="M50 67 C47 54 43 44 37 40 C43 35 46 28 53 19 C67 5 94 2 114 11 C124 15 131 21 136 26 L140 18 L143 27 L149 27 L143 34 C146 47 141 64 128 74 C126 60 120 46 116 39 C103 45 86 46 73 41 C63 40 55 43 51 46 C49 54 51 61 50 67 Z" fill="#3b2212" stroke="#1e1b18" stroke-width="2.6" stroke-linejoin="round" />
             <path d="M58 24 C73 10 96 7 115 15" fill="none" stroke="#633a1e" stroke-width="2.6" stroke-linecap="round" />
             <path d="M107 16 L122 21 L126 28 L116 27 L111 33 L100 26 L108 23 Z" fill="#ffffff" />
             <path d="M134 34 L141 44 L135 51 L131 48 L127 53 L122 44 L131 40 Z" fill="#ffffff" />
-
             ${eyesAndBrowsSvg}
             ${mouthOrMaskSvg}
           </svg>
@@ -3700,53 +4028,217 @@
         const wrfMetrics = t.wrf?.simulated_atmospheric_metrics || {};
         const baseWind = Number(wrfMetrics.wind_speed_kmh ?? t.windSpeed ?? 10);
         const baseGust = Number(wrfMetrics.wind_gusts_kmh ?? (baseWind + 5));
+        const wind80m = Number(wrfMetrics.wind_80m_kmh ?? (baseWind * 1.28));
+        const wind120m = Number(wrfMetrics.wind_120m_kmh ?? (baseWind * 1.42));
+        const shearDelta = Number(wrfMetrics.wind_shear_10_120_kmh ?? Math.max(0, wind120m - baseWind));
         const basePress = Number(wrfMetrics.surface_pressure_mb ?? t.pressure ?? 1012);
-        const stabilityText = wrfMetrics.atmospheric_stability_index ?? (baseWind > 18 ? 'Moderate Atmospheric Turbulence' : 'Stable Laminar Flow');
+        const capeVal = Math.round(Number(wrfMetrics.cape_jkg ?? 140));
+        const pblHeight = Math.round(Number(wrfMetrics.boundary_layer_height_m ?? 850));
+        const windDeg = Math.round(Number(wrfMetrics.wind_direction_degrees ?? 140));
+        const stabilityText = wrfMetrics.atmospheric_stability_index ?? (baseWind > 18 ? 'Moderate Boundary-Layer Turbulence' : 'Stable Laminar Flow');
         const compassDir = wrfMetrics.wind_direction_compass || t.windDirCompass || 'SE';
 
+        const wrfBadgeEl = document.getElementById('wrf-model-badge');
+        if (wrfBadgeEl && t.wrf?.numerical_model) {
+          wrfBadgeEl.textContent = `🔮 ${t.wrf.numerical_model}`;
+        }
+
+        const rawProg = Array.isArray(t.wrf?.progression_12h) && t.wrf.progression_12h.length
+          ? t.wrf.progression_12h
+          : [0, 3, 6, 9, 12].map((hOff, idx) => {
+              const wave = Math.sin(idx * 1.05);
+              const wVal = Math.max(2, Number((baseWind + wave * 2.2).toFixed(1)));
+              const gVal = Math.max(wVal + 1.5, Number((baseGust + wave * 3.1).toFixed(1)));
+              const pVal = Number((basePress - wave * 0.9).toFixed(1));
+              return {
+                horizon_label: hOff === 0 ? 'Now' : `+${hOff}h`,
+                local_clock: hOff === 0 ? 'Now' : `+${hOff}h`,
+                hours_ahead: hOff,
+                wind_speed_kmh: wVal,
+                wind_gusts_kmh: gVal,
+                wind_80m_kmh: Number((wVal * 1.28).toFixed(1)),
+                wind_120m_kmh: Number((wVal * 1.42).toFixed(1)),
+                surface_pressure_mb: pVal,
+                cape_jkg: Math.max(0, Math.round(capeVal + wave * 80)),
+                wind_direction_degrees: windDeg,
+                wind_direction_compass: compassDir
+              };
+            });
+
+        const firstPress = Number(rawProg[0]?.surface_pressure_mb ?? basePress);
+        const lastPress = Number(rawProg[rawProg.length - 1]?.surface_pressure_mb ?? basePress);
+        const pressTrendDelta = Number((lastPress - firstPress).toFixed(1));
+        const pressTrendLabel = pressTrendDelta <= -1.2
+          ? `Falling (${pressTrendDelta} hPa / 12h · Cyclonic)`
+          : pressTrendDelta >= 1.2
+            ? `Rising (+${pressTrendDelta} hPa / 12h · Ridge)`
+            : `Steady (${pressTrendDelta >= 0 ? '+' : ''}${pressTrendDelta} hPa / 12h)`;
+
+        const capeStatus = capeVal >= 1500
+          ? { label: 'High Convective Instability', color: 'text-rose-300' }
+          : capeVal >= 600
+            ? { label: 'Moderate Convective Energy', color: 'text-amber-300' }
+            : { label: 'Weak / Capped Convection', color: 'text-emerald-300' };
+
         document.getElementById('sub-wrf-content').innerHTML = `
-          <div class="p-4 rounded-xl bg-white/5 border border-white/10">
-            <div class="text-xs text-slate-400">Surface Wind &amp; Gusts (${compassDir})</div>
-            <div class="text-lg sm:text-xl font-extrabold text-white mt-1">${baseWind.toFixed(1)} km/h (Gusts ${baseGust.toFixed(1)} km/h)</div>
+          <div class="prediction-card p-4">
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-sky-200 font-semibold">10m Surface Wind &amp; Peak Gusts</span>
+              <span class="font-mono text-[11px] text-sky-300">${compassDir} (${windDeg}°)</span>
+            </div>
+            <div class="text-lg sm:text-xl font-extrabold text-white mt-1.5">${baseWind.toFixed(1)} km/h <span class="text-sm text-amber-300">· Gust ${baseGust.toFixed(1)} km/h</span></div>
+            <div class="text-[11px] text-slate-300 mt-1">Gust Factor: ${(baseGust / Math.max(1, baseWind)).toFixed(2)}× · Shear Δ ${shearDelta.toFixed(1)} km/h</div>
           </div>
           <div class="p-4 rounded-xl bg-white/5 border border-white/10">
-            <div class="text-xs text-slate-400">Surface Pressure</div>
-            <div class="text-lg sm:text-xl font-extrabold text-sky-300 mt-1">${basePress.toFixed(1)} hPa</div>
+            <div class="text-xs text-slate-400">Barometric Pressure &amp; 12h Tendency</div>
+            <div class="text-lg sm:text-xl font-extrabold text-sky-300 mt-1.5">${basePress.toFixed(1)} hPa</div>
+            <div class="text-[11px] text-slate-300 mt-1">${pressTrendLabel}</div>
           </div>
           <div class="p-4 rounded-xl bg-white/5 border border-white/10">
-            <div class="text-xs text-slate-400">Boundary Layer Stability</div>
-            <div class="text-sm font-bold text-indigo-200 mt-1">${stabilityText}</div>
+            <div class="text-xs text-slate-400">Convective Energy (CAPE) &amp; PBL Depth</div>
+            <div class="text-lg sm:text-xl font-extrabold text-indigo-200 mt-1.5">${capeVal} J/kg <span class="text-xs font-mono text-slate-300">· PBL ${pblHeight}m</span></div>
+            <div class="text-[11px] ${capeStatus.color} font-semibold mt-1">${stabilityText}</div>
           </div>
         `;
 
+        const shearPanelEl = document.getElementById('sub-wrf-shear-panel');
+        if (shearPanelEl) {
+          const maxLayerWind = Math.max(25, wind120m * 1.15, baseGust * 1.1);
+          const layers = [
+            { alt: '120m Hub Height', val: wind120m, grad: 'from-indigo-400 to-purple-400' },
+            { alt: '80m Boundary Layer', val: wind80m, grad: 'from-sky-400 to-indigo-400' },
+            { alt: '10m Surface Flow', val: baseWind, grad: 'from-teal-400 to-sky-400' }
+          ];
+
+          shearPanelEl.innerHTML = `
+            <div class="p-4 rounded-xl bg-slate-950/65 border border-sky-400/25 flex items-center gap-4">
+              <div class="relative w-24 h-24 shrink-0">
+                <svg viewBox="0 0 100 100" class="w-full h-full">
+                  <circle cx="50" cy="50" r="44" fill="rgba(15,23,42,0.85)" stroke="rgba(56,189,248,0.35)" stroke-width="1.5" />
+                  <circle cx="50" cy="50" r="32" fill="none" stroke="rgba(148,163,184,0.18)" stroke-dasharray="2 3" />
+                  <text x="50" y="14" text-anchor="middle" fill="#38bdf8" font-size="9" font-weight="800">N</text>
+                  <text x="87" y="53" text-anchor="middle" fill="#94a3b8" font-size="8" font-weight="700">E</text>
+                  <text x="50" y="92" text-anchor="middle" fill="#94a3b8" font-size="8" font-weight="700">S</text>
+                  <text x="13" y="53" text-anchor="middle" fill="#94a3b8" font-size="8" font-weight="700">W</text>
+                  <g transform="rotate(${windDeg} 50 50)">
+                    <line x1="50" y1="76" x2="50" y2="20" stroke="#f59e0b" stroke-width="2.6" stroke-linecap="round" />
+                    <polygon points="50,14 44,26 56,26" fill="#fbbf24" />
+                    <circle cx="50" cy="50" r="4" fill="#38bdf8" stroke="#0f172a" stroke-width="1.5" />
+                  </g>
+                </svg>
+              </div>
+              <div class="min-w-0">
+                <div class="text-[11px] uppercase tracking-wider text-sky-300 font-bold">Wind Vector &amp; Azimuth</div>
+                <div class="text-lg font-extrabold text-white mt-0.5">${compassDir} · ${windDeg}°</div>
+                <div class="text-[11px] text-slate-300 mt-1">Vertical Shear (10→120m): <strong class="text-amber-300">+${shearDelta.toFixed(1)} km/h</strong></div>
+                <div class="text-[10.5px] text-slate-400 mt-0.5">${capeStatus.label}</div>
+              </div>
+            </div>
+
+            <div class="p-4 rounded-xl bg-slate-950/65 border border-sky-400/25 lg:col-span-2 flex flex-col justify-between">
+              <div class="flex items-center justify-between gap-2 mb-2.5">
+                <span class="text-xs uppercase tracking-wider text-sky-300 font-bold">Vertical Boundary-Layer Wind Shear Profile</span>
+                <span class="text-[10.5px] font-mono text-slate-400">10m → 80m → 120m</span>
+              </div>
+              <div class="space-y-2.5">
+                ${layers.map((ly) => {
+                  const pct = Math.max(8, Math.min(100, Math.round((ly.val / maxLayerWind) * 100)));
+                  return `
+                    <div>
+                      <div class="flex justify-between text-[11px] mb-1">
+                        <span class="text-slate-300 font-medium">${ly.alt}</span>
+                        <span class="font-mono font-bold text-white">${ly.val.toFixed(1)} km/h</span>
+                      </div>
+                      <div class="w-full h-2 rounded-full bg-white/10 overflow-hidden">
+                        <div class="h-full rounded-full bg-gradient-to-r ${ly.grad} transition-all duration-500" style="width: ${pct}%;"></div>
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          `;
+        }
+
         const progEl = document.getElementById('sub-wrf-progression');
         if (progEl) {
-          const offsets = [0, 3, 6, 12];
+          const leftPad = 44, rightPad = 616, topPad = 20, bottomPad = 112;
+          const stepX = rawProg.length > 1 ? (rightPad - leftPad) / (rawProg.length - 1) : 0;
+          const allWinds = rawProg.flatMap((p) => [Number(p.wind_speed_kmh), Number(p.wind_gusts_kmh)]);
+          const maxW = Math.max(...allWinds, 15) + 4;
+          const minW = Math.max(0, Math.min(...allWinds) - 3);
+          const wSpan = Math.max(1, maxW - minW);
+
+          const ptsWind = rawProg.map((p, i) => ({
+            x: leftPad + i * stepX,
+            y: bottomPad - ((Number(p.wind_speed_kmh) - minW) / wSpan) * (bottomPad - topPad),
+            val: Number(p.wind_speed_kmh),
+            label: p.horizon_label
+          }));
+          const ptsGust = rawProg.map((p, i) => ({
+            x: leftPad + i * stepX,
+            y: bottomPad - ((Number(p.wind_gusts_kmh) - minW) / wSpan) * (bottomPad - topPad),
+            val: Number(p.wind_gusts_kmh)
+          }));
+
+          const windPath = buildSmoothPath(ptsWind);
+          const gustPath = buildSmoothPath(ptsGust);
+
           progEl.innerHTML = `
             <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5">
-              <p class="text-xs uppercase tracking-wider text-sky-300 font-bold">Deterministic Boundary-Layer Progression</p>
-              <span class="text-[11px] font-mono text-slate-400">Bearing: ${compassDir}</span>
+              <div>
+                <p class="text-xs uppercase tracking-wider text-sky-300 font-bold">12-Hour Deterministic NWP Wind &amp; Gust Progression</p>
+                <p class="text-[11px] text-slate-400">Hourly GFS/ICON boundary-layer evolution for ${t.city.name}</p>
+              </div>
+              <div class="flex items-center gap-3 text-[11px] font-semibold">
+                <span class="flex items-center gap-1.5 text-sky-300"><span class="w-2.5 h-0.5 bg-sky-400 inline-block rounded"></span>10m Wind</span>
+                <span class="flex items-center gap-1.5 text-amber-300"><span class="w-2.5 h-0.5 bg-amber-400 inline-block rounded"></span>Peak Gust</span>
+              </div>
             </div>
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
-              ${offsets.map((hOff, idx) => {
-                const wave = Math.sin(idx * 1.15);
-                const wVal = Math.max(2, Number((baseWind + wave * 2.2).toFixed(1)));
-                const gVal = Math.max(wVal + 1.5, Number((baseGust + wave * 3.1).toFixed(1)));
-                const pVal = Number((basePress - wave * 0.8).toFixed(1));
+
+            <div class="w-full h-32 sm:h-36 rounded-xl bg-slate-950/70 border border-sky-400/25 p-2 mb-3">
+              <svg viewBox="0 0 650 132" class="w-full h-full overflow-visible">
+                <line x1="${leftPad}" y1="${topPad}" x2="${rightPad}" y2="${topPad}" stroke="rgba(148,163,184,0.14)" stroke-dasharray="3 4" />
+                <line x1="${leftPad}" y1="${bottomPad}" x2="${rightPad}" y2="${bottomPad}" stroke="rgba(148,163,184,0.22)" />
+                <text x="6" y="${topPad + 4}" fill="#64748b" font-size="10" font-family="monospace">${Math.round(maxW)}k</text>
+                <text x="6" y="${bottomPad + 3}" fill="#64748b" font-size="10" font-family="monospace">${Math.round(minW)}k</text>
+                <path d="${gustPath}" fill="none" stroke="#fbbf24" stroke-width="2.4" stroke-dasharray="4 3" stroke-linecap="round" />
+                <path d="${windPath}" fill="none" stroke="#38bdf8" stroke-width="3" stroke-linecap="round" />
+                ${ptsWind.map((pt, i) => {
+                  const gPt = ptsGust[i];
+                  return `
+                    <circle cx="${gPt.x.toFixed(1)}" cy="${gPt.y.toFixed(1)}" r="3.4" fill="#fbbf24" />
+                    <text x="${gPt.x.toFixed(1)}" y="${(gPt.y - 7).toFixed(1)}" text-anchor="middle" fill="#fde68a" font-size="9.5" font-weight="700">${gPt.val.toFixed(0)}</text>
+                    <circle cx="${pt.x.toFixed(1)}" cy="${pt.y.toFixed(1)}" r="3.8" fill="#38bdf8" stroke="#0f172a" stroke-width="1.2" />
+                    <text x="${pt.x.toFixed(1)}" y="${(pt.y + 13).toFixed(1)}" text-anchor="middle" fill="#bae6fd" font-size="9.5" font-weight="700">${pt.val.toFixed(0)}</text>
+                    <text x="${pt.x.toFixed(1)}" y="${bottomPad + 16}" text-anchor="middle" fill="#94a3b8" font-size="10" font-weight="700">${pt.label}</text>
+                  `;
+                }).join('')}
+              </svg>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+              ${rawProg.map((slot) => {
+                const wVal = Number(slot.wind_speed_kmh ?? baseWind);
+                const gVal = Number(slot.wind_gusts_kmh ?? baseGust);
+                const pVal = Number(slot.surface_pressure_mb ?? basePress);
+                const cVal = Math.round(Number(slot.cape_jkg ?? capeVal));
+                const dirStr = slot.wind_direction_compass || compassDir;
                 const spread = gVal - wVal;
-                const regime = gVal >= 30 || spread >= 15
-                  ? 'Severe Gust Regime'
-                  : wVal >= 15 || spread >= 8
+                const regime = gVal >= 30 || spread >= 15 || cVal >= 1500
+                  ? 'Severe Gust / Convective'
+                  : wVal >= 15 || spread >= 8 || cVal >= 600
                     ? 'Moderate Mixing'
                     : 'Stable Laminar Flow';
                 return `
                   <div class="p-3 rounded-xl bg-slate-950/65 border border-sky-400/20">
                     <div class="flex items-center justify-between text-xs font-extrabold text-sky-200">
-                      <span>${hOff === 0 ? 'Now' : `+${hOff}h`}</span>
-                      <span class="font-mono text-[11px] text-slate-400">${pVal} hPa</span>
+                      <span>${slot.horizon_label} <span class="text-[10px] font-normal text-slate-400">${slot.local_clock !== slot.horizon_label ? slot.local_clock : ''}</span></span>
+                      <span class="font-mono text-[10.5px] text-slate-400">${pVal.toFixed(0)} hPa</span>
                     </div>
-                    <div class="text-xs sm:text-sm font-bold text-white mt-1.5">${wVal} km/h <span class="text-[11px] sm:text-xs text-amber-300">· Gust ${gVal}</span></div>
-                    <div class="text-[11px] text-indigo-200 mt-1">${regime}</div>
+                    <div class="text-xs sm:text-sm font-bold text-white mt-1.5">${wVal.toFixed(1)} km/h <span class="text-[11px] text-amber-300">· Gust ${gVal.toFixed(1)}</span></div>
+                    <div class="text-[10.5px] font-mono text-slate-400 mt-1">${dirStr} · CAPE ${cVal} J/kg</div>
+                    <div class="text-[11px] text-indigo-200 mt-0.5">${regime}</div>
                   </div>
                 `;
               }).join('')}
@@ -3942,18 +4434,23 @@
         const estPm25 = Number((predAqi * 0.42).toFixed(1));
         const estPm10 = Number((predAqi * 0.78).toFixed(1));
 
-        const condLabel = rainChance >= 60
-          ? '🌧️ Active Rain Spell'
-          : rainChance >= 32
-            ? '🌦️ Passing Showers'
-            : winterStagnation > 0.55
-              ? '🌫️ Crisp Cool & Mist'
-              : '☀️ Bright & Warm';
-        const verdictLabel = rainChance >= 50
-          ? 'Rain Expected on Selected Date'
-          : rainChance >= 25
-            ? 'Chance of Intermittent Rain'
-            : 'Dry Spell Expected';
+        const isSnowDate = maxT <= 1.0 && rainChance >= 35;
+        const condLabel = isSnowDate
+          ? (rainChance >= 70 ? '❄️ Heavy Snowfall' : '❄️ Snowfall')
+          : rainChance >= 60
+            ? '🌧️ Active Rain Spell'
+            : rainChance >= 32
+              ? '🌦️ Passing Showers'
+              : winterStagnation > 0.55
+                ? '🌫️ Crisp Cool & Mist'
+                : '☀️ Bright & Warm';
+        const verdictLabel = isSnowDate
+          ? 'Snowfall Expected on Selected Date'
+          : rainChance >= 50
+            ? 'Rain Expected on Selected Date'
+            : rainChance >= 25
+              ? 'Chance of Intermittent Rain'
+              : 'Dry Spell Expected';
 
         document.getElementById('cal-forecast-body').innerHTML = `
           <div class="p-3 rounded-xl bg-slate-950/65 border border-sky-400/25 space-y-1.5">
@@ -3971,7 +4468,7 @@
               <span class="text-[10px] text-slate-400">Mean: ${meanT}°C</span>
             </div>
             <div class="p-2.5 rounded-xl bg-white/5 border border-white/10">
-              <span class="text-[10px] uppercase tracking-wider text-slate-400 block">Precipitation</span>
+              <span class="text-[10px] uppercase tracking-wider text-slate-400 block">${isSnowDate ? 'Snowfall' : 'Precipitation'}</span>
               <span class="text-sm font-extrabold text-indigo-300 mt-0.5 block">${rainChance}% · ${precipMm.toFixed(1)} mm</span>
               <span class="text-[10px] text-slate-400">24h Moisture Outlook</span>
             </div>
@@ -4009,15 +4506,10 @@
       function applyCalendarPreset(presetKey) {
         const now = new Date();
         let target = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        if (presetKey === 'plus30') {
-          target.setDate(target.getDate() + 30);
-        } else if (presetKey === 'monsoon') {
-          target = new Date(Math.max(2026, now.getFullYear()), 6, 15);
-        } else if (presetKey === 'y2050') {
-          target = new Date(2050, 5, 15);
-        } else if (presetKey === 'y2100') {
-          target = new Date(2100, 5, 15);
-        }
+        if (presetKey === 'plus30') target.setDate(target.getDate() + 30);
+        else if (presetKey === 'monsoon') target = new Date(Math.max(2026, now.getFullYear()), 6, 15);
+        else if (presetKey === 'y2050') target = new Date(2050, 5, 15);
+        else if (presetKey === 'y2100') target = new Date(2100, 5, 15);
 
         const clampedYear = Math.min(2100, Math.max(2026, target.getFullYear()));
         const monthIdx = target.getMonth();
@@ -4073,21 +4565,9 @@
         syncEffectForCurrentPage();
       }
 
-      /**
-       * Binds all UI controls, search input, calendar controls, and FX buttons.
-       */
       function bindEvents() {
         window.addEventListener('resize', resizeCanvases);
         window.addEventListener('orientationchange', () => setTimeout(resizeCanvases, 120));
-
-        const dashViewEl = document.getElementById('dashboard-view');
-        if (dashViewEl) {
-          dashViewEl.addEventListener('scroll', () => {
-            const noticeEl = document.getElementById('app-notice');
-            if (!noticeEl || noticeEl.classList.contains('hidden')) return;
-            noticeEl.classList.toggle('scrolled-compact', dashViewEl.scrollTop > 28);
-          }, { passive: true });
-        }
 
         document.getElementById('reconnect-btn').addEventListener('click', () => {
           getBackendBaseUrl();
@@ -4110,15 +4590,33 @@
           }
           syncEffectForCurrentPage();
         });
-        document.getElementById('spin-boost-btn').addEventListener('click', () => {
-          spinBoostVelocity = 0.085;
-        });
 
         const inputEl = document.getElementById('city-input');
+        const clearBtn = document.getElementById('clear-city-btn');
         const dropEl = document.getElementById('suggestions-dropdown');
         let timer;
 
+        function updateClearBtnVisibility() {
+          if (!clearBtn) return;
+          const isFocused = document.activeElement === inputEl;
+          clearBtn.classList.toggle('hidden', !(isFocused && inputEl.value.trim().length > 0));
+        }
+
+        inputEl.addEventListener('focus', updateClearBtnVisibility);
+        inputEl.addEventListener('blur', () => setTimeout(updateClearBtnVisibility, 140));
+
+        if (clearBtn) {
+          clearBtn.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            inputEl.value = '';
+            dropEl.classList.add('hidden');
+            updateClearBtnVisibility();
+            inputEl.focus();
+          });
+        }
+
         inputEl.addEventListener('input', () => {
+          updateClearBtnVisibility();
           clearTimeout(timer);
           const q = inputEl.value.trim();
           if (q.length < 2) {
@@ -4127,11 +4625,23 @@
           }
           timer = setTimeout(async () => {
             try {
+              const lowerQ = q.toLowerCase();
+              const hubMatches = Object.entries(INDIAN_STATE_HUBS)
+                .filter(([key, hub]) => key.includes(lowerQ) || hub.name.toLowerCase().includes(lowerQ))
+                .map(([key, hub]) => ({
+                  name: hub.name,
+                  admin1: key.replace(/\b\w/g, (ch) => ch.toUpperCase()),
+                  country: hub.country,
+                  latitude: hub.lat,
+                  longitude: hub.lon
+                }));
+
               const res = await fetch(
                 `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=5&language=en&format=json`
               );
               const data = await res.json();
-              const list = data.results || [];
+              const apiList = data.results || [];
+              const list = [...hubMatches, ...apiList].slice(0, 6);
               if (!list.length) {
                 dropEl.classList.add('hidden');
                 return;
@@ -4146,6 +4656,7 @@
                 `;
                 row.addEventListener('click', () => {
                   inputEl.value = c.name;
+                  updateClearBtnVisibility();
                   dropEl.classList.add('hidden');
                   fetchCityAndOpen({
                     name: c.name,
@@ -4175,6 +4686,7 @@
         document.querySelectorAll('.chip').forEach((chip) => {
           chip.addEventListener('click', () => {
             inputEl.value = chip.dataset.city;
+            updateClearBtnVisibility();
             dropEl.classList.add('hidden');
             fetchCityAndOpen({
               name: chip.dataset.city,
@@ -4260,9 +4772,6 @@
         });
       }
 
-      /**
-       * Main animation loop for the 3D globe, pin marker, pulse rings, and weather canvases.
-       */
       function animate(now) {
         requestAnimationFrame(animate);
         try {
@@ -4305,9 +4814,6 @@
         }
       }
 
-      /**
-       * Boots the application and loads initial city telemetry.
-       */
       function boot() {
         try {
           const urlInput = document.getElementById('backend-url-input');
@@ -4330,6 +4836,7 @@
           });
         } catch (err) {
           console.error('Boot error:', err);
+          showRuntimeToast(err.message || 'Initialization error');
         }
       }
 
